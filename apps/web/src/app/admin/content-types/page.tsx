@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button as ShadcnButton, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/base/buttons/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -58,10 +59,9 @@ export default function ContentTypesPage() {
             Gerencie os tipos de conteúdo disponíveis no sistema.
           </p>
         </div>
-        <Link href="/admin/content-types/new" className={buttonVariants()}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button href="/admin/content-types/new" iconLeading={Plus}>
           Novo Tipo de Conteúdo
-        </Link>
+        </Button>
       </div>
 
       <div className="flex gap-4">
@@ -142,7 +142,7 @@ export default function ContentTypesPage() {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <Button 
+                        <ShadcnButton 
                           variant="ghost" 
                           size="icon" 
                           onClick={() => handleToggleActive(item.id)}
@@ -150,7 +150,7 @@ export default function ContentTypesPage() {
                           title={item.isActive ? "Desativar" : "Ativar"}
                         >
                           <Power className={`h-4 w-4 ${item.isActive ? "text-green-600" : "text-muted-foreground"}`} />
-                        </Button>
+                        </ShadcnButton>
                         <Link 
                           href={`/admin/content-types/${item.id}/edit`}
                           className={buttonVariants({ variant: "ghost", size: "icon" })}
@@ -179,22 +179,22 @@ export default function ContentTypesPage() {
             Mostrando {((page - 1) * limit) + 1} a {Math.min(page * limit, data.total)} de {data.total} tipos
           </p>
           <div className="flex gap-2">
-            <Button 
+            <ShadcnButton 
               variant="outline" 
               size="sm" 
               onClick={() => setPage(p => p - 1)}
               disabled={page === 1}
             >
               Anterior
-            </Button>
-            <Button 
+            </ShadcnButton>
+            <ShadcnButton 
               variant="outline" 
               size="sm" 
               onClick={() => setPage(p => p + 1)}
               disabled={!data.hasMore}
             >
               Próximo
-            </Button>
+            </ShadcnButton>
           </div>
         </div>
       )}
