@@ -84,11 +84,11 @@ export default function EditContentTypePage() {
                 <Skeleton className="h-10 w-full" />
               </div>
             ))}
-          </CardContent>
+           </CardContent>
         </Card>
       </div>
     );
-  }
+}
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -202,8 +202,43 @@ export default function EditContentTypePage() {
               )}
             </Button>
           </CardFooter>
-        </form>
-      </Card>
-    </div>
-  );
+         </form>
+       </Card>
+
+       <Card className="mt-6">
+         <CardHeader>
+           <CardTitle className="text-lg">Configuration</CardTitle>
+           <CardDescription>
+             Configure custom fields and workflow for this content type.
+           </CardDescription>
+         </CardHeader>
+         <CardContent className="grid gap-4 sm:grid-cols-2">
+           <Link
+             href={`/admin/content-types/${id}/fields` as any}
+             className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+           >
+             <div>
+               <p className="font-medium">Custom Fields</p>
+               <p className="text-sm text-muted-foreground">
+                 Configure form fields for requests of this type
+               </p>
+             </div>
+             <ArrowLeft className="h-4 w-4 rotate-180" />
+           </Link>
+           <Link
+             href={`/admin/content-types/${id}/workflow` as any}
+             className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+           >
+             <div>
+               <p className="font-medium">Workflow Steps</p>
+               <p className="text-sm text-muted-foreground">
+                 Configure approval workflow for this type
+               </p>
+             </div>
+             <ArrowLeft className="h-4 w-4 rotate-180" />
+           </Link>
+         </CardContent>
+       </Card>
+     </div>
+   );
 }

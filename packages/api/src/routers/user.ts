@@ -4,7 +4,7 @@ import { createId } from "@paralleldrive/cuid2";
 
 import db, { UserRole, AreaPosition } from "@marketingclickcannabis/db";
 
-import { adminProcedure, router } from "../index";
+import { adminProcedure, protectedProcedure, router } from "../index";
 
 export const userRouter = router({
   list: adminProcedure
@@ -315,4 +315,30 @@ export const userRouter = router({
 
       return { success: true };
     }),
+
+  me: protectedProcedure.query(async ({ ctx }) => {
+    const user = await db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        areaMemberships: {
+          include: {
+            area: { select: { id: true, name: true, slug: true } },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "User not found",
+      });
+    }
+
+    return user;
+  }),
 });

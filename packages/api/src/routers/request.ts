@@ -40,6 +40,7 @@ const createInputSchema = z.object({
   priority: z.nativeEnum(Priority).optional(),
   deadline: z.coerce.date().optional(),
   patologia: z.nativeEnum(Patologia).optional(),
+  fieldValues: z.record(z.string(), z.any()).optional(),
 });
 
 const updateInputSchema = z.object({
@@ -51,6 +52,7 @@ const updateInputSchema = z.object({
   priority: z.nativeEnum(Priority).optional(),
   deadline: z.coerce.date().optional(),
   patologia: z.nativeEnum(Patologia).optional(),
+  fieldValues: z.record(z.string(), z.any()).optional(),
 });
 
 const submitInputSchema = z.object({
@@ -79,6 +81,7 @@ const correctInputSchema = z.object({
   priority: z.nativeEnum(Priority).optional(),
   deadline: z.coerce.date().optional(),
   patologia: z.nativeEnum(Patologia).optional(),
+  fieldValues: z.record(z.string(), z.any()).optional(),
 });
 
 const cancelInputSchema = z.object({
@@ -216,6 +219,30 @@ export const requestRouter = router({
            },
          });
 
+        if (input.fieldValues && Object.keys(input.fieldValues).length > 0) {
+          const contentType = await tx.contentType.findUnique({
+            where: { id: input.contentTypeId },
+            include: { fields: { where: { isActive: true } } },
+          });
+
+          if (contentType) {
+            const fieldMap = new Map(contentType.fields.map((f) => [f.name, f]));
+
+            for (const [fieldName, value] of Object.entries(input.fieldValues)) {
+              const field = fieldMap.get(fieldName);
+              if (!field) continue;
+
+              await tx.requestFieldValue.create({
+                data: {
+                  requestId: request.id,
+                  fieldId: field.id,
+                  value,
+                },
+              });
+            }
+          }
+        }
+
         return request;
       });
     }),
@@ -224,7 +251,7 @@ export const requestRouter = router({
     .input(updateInputSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-      const { id, ...updateData } = input;
+      const { id, fieldValues, ...updateData } = input;
 
       return db.$transaction(async (tx) => {
         const existing = await tx.request.findUnique({ where: { id } });
@@ -271,6 +298,28 @@ export const requestRouter = router({
           },
         });
 
+        if (fieldValues && Object.keys(fieldValues).length > 0) {
+          const contentType = await tx.contentType.findUnique({
+            where: { id: existing.contentTypeId },
+            include: { fields: { where: { isActive: true } } },
+          });
+
+          if (contentType) {
+            const fieldMap = new Map(contentType.fields.map((f) => [f.name, f]));
+
+            for (const [fieldName, value] of Object.entries(fieldValues)) {
+              const field = fieldMap.get(fieldName);
+              if (!field) continue;
+
+              await tx.requestFieldValue.upsert({
+                where: { requestId_fieldId: { requestId: id, fieldId: field.id } },
+                create: { requestId: id, fieldId: field.id, value },
+                update: { value },
+              });
+            }
+          }
+        }
+
         return request;
       });
     }),
@@ -304,9 +353,20 @@ export const requestRouter = router({
            });
          }
 
+        let currentStepId = existing.currentStepId;
+        if (!currentStepId) {
+          const firstStep = await getFirstStep(existing.contentTypeId);
+          if (firstStep) {
+            currentStepId = firstStep.id;
+          }
+        }
+
         const request = await tx.request.update({
           where: { id: input.id },
-          data: { status: RequestStatus.PENDING },
+          data: {
+            status: RequestStatus.PENDING,
+            currentStepId,
+          },
         });
 
         await tx.requestHistory.create({
@@ -463,7 +523,7 @@ export const requestRouter = router({
     .input(correctInputSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-      const { id, ...updateData } = input;
+      const { id, fieldValues, ...updateData } = input;
 
       return db.$transaction(async (tx) => {
         const existing = await tx.request.findUnique({ where: { id } });
@@ -514,6 +574,28 @@ export const requestRouter = router({
             newValues: Object.keys(newValues).length > 0 ? newValues : undefined,
           },
         });
+
+        if (fieldValues && Object.keys(fieldValues).length > 0) {
+          const contentType = await tx.contentType.findUnique({
+            where: { id: existing.contentTypeId },
+            include: { fields: { where: { isActive: true } } },
+          });
+
+          if (contentType) {
+            const fieldMap = new Map(contentType.fields.map((f) => [f.name, f]));
+
+            for (const [fieldName, value] of Object.entries(fieldValues)) {
+              const field = fieldMap.get(fieldName);
+              if (!field) continue;
+
+              await tx.requestFieldValue.upsert({
+                where: { requestId_fieldId: { requestId: id, fieldId: field.id } },
+                create: { requestId: id, fieldId: field.id, value },
+                update: { value },
+              });
+            }
+          }
+        }
 
         return request;
       });

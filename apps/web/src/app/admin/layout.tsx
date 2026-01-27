@@ -47,6 +47,12 @@ export default async function AdminLayout({
           >
             Areas
           </Link>
+          <Link
+            href="/admin/users"
+            className="block rounded-md px-3 py-2 text-sm hover:bg-muted"
+          >
+            Users
+          </Link>
         </nav>
         <div className="mt-8 pt-4 border-t">
           <Link

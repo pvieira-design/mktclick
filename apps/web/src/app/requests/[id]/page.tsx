@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { WorkflowActions, WorkflowProgress } from "@/components/request/workflow-actions";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +88,27 @@ interface RequestData {
     createdAt: string;
     changedBy: { name: string | null; email: string };
   }>;
+  currentStep: {
+    id: string;
+    name: string;
+    order: number;
+    approverAreaId: string | null;
+    approverPositions: string[];
+    isFinalStep: boolean;
+    approverArea?: { id: string; name: string; slug: string } | null;
+  } | null;
+  currentStepId: string | null;
+  workflowSteps: Array<{
+    id: string;
+    name: string;
+    order: number;
+    approverAreaId: string | null;
+    approverPositions: string[];
+    isFinalStep: boolean;
+    approverArea?: { id: string; name: string; slug: string } | null;
+  }>;
+  totalSteps: number;
+  currentStepOrder: number | null;
 }
 
 const formatDate = (dateStr: string) => {
@@ -112,6 +135,7 @@ export default function RequestDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user: currentUser, areaMemberships, isLoading: loadingUser } = useCurrentUser();
   const requestId = params.id as string;
 
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -207,6 +231,31 @@ export default function RequestDetailsPage() {
 
   const renderActions = () => {
     const status = request.status;
+    const hasWorkflow = request.workflowSteps && request.workflowSteps.length > 0;
+    
+    if (hasWorkflow && request.currentStep && currentUser) {
+      return (
+        <WorkflowActions
+          request={{
+            id: request.id,
+            status: request.status,
+            createdById: request.createdBy.id,
+            currentStep: request.currentStep,
+            currentStepOrder: request.currentStepOrder,
+            totalSteps: request.totalSteps,
+            workflowSteps: request.workflowSteps,
+          }}
+          userId={currentUser.id}
+          userAreaMemberships={areaMemberships.map(m => ({
+            areaId: m.areaId,
+            position: m.position,
+            area: m.area,
+          }))}
+          onActionComplete={invalidateAndRefetch}
+        />
+      );
+    }
+
     const actions: React.ReactNode[] = [];
 
     if (status === "DRAFT") {
@@ -324,6 +373,15 @@ export default function RequestDetailsPage() {
               </div>
             )}
 
+            {request.workflowSteps && request.workflowSteps.length > 0 && (
+              <div className="py-2">
+                <WorkflowProgress
+                  steps={request.workflowSteps}
+                  currentStepOrder={request.currentStepOrder}
+                />
+              </div>
+            )}
+
             <Separator />
 
             <div>
@@ -353,7 +411,11 @@ export default function RequestDetailsPage() {
             <Separator />
 
             <div className="flex flex-wrap gap-3">
-              {renderActions()}
+              {loadingUser ? (
+                <div className="text-sm text-muted-foreground">Loading...</div>
+              ) : (
+                renderActions()
+              )}
             </div>
           </CardContent>
         </Card>

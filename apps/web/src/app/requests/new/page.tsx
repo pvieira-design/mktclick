@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { DynamicFieldRenderer } from "@/components/request/dynamic-field-renderer";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +49,7 @@ interface CreateRequestPayload {
   priority?: Priority;
   deadline?: Date;
   patologia?: Patologia;
+  fieldValues?: Record<string, any>;
 }
 
 export default function NewRequestPage() {
@@ -66,6 +68,15 @@ export default function NewRequestPage() {
     deadline: "",
     patologia: "" as Patologia | "",
   });
+
+  const { data: fieldsData, isLoading: loadingFields } = useQuery({
+    ...trpc.contentTypeField.listByContentType.queryOptions({ 
+      contentTypeId: formData.contentTypeId 
+    }),
+    enabled: !!formData.contentTypeId,
+  });
+
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -107,6 +118,10 @@ export default function NewRequestPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleFieldChange = (fieldName: string, value: any) => {
+    setFieldValues(prev => ({ ...prev, [fieldName]: value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -120,6 +135,7 @@ export default function NewRequestPage() {
       priority: formData.priority,
       deadline: formData.deadline ? new Date(formData.deadline) : undefined,
       patologia: formData.patologia ? formData.patologia as Patologia : undefined,
+      fieldValues: Object.keys(fieldValues).length > 0 ? fieldValues : undefined,
     };
 
     createMutation.mutate(payload as any);
@@ -264,6 +280,28 @@ export default function NewRequestPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {formData.contentTypeId && (
+              <div className="space-y-6 pt-4 border-t">
+                <div>
+                  <h3 className="text-sm font-medium mb-4">Custom Fields</h3>
+                  {loadingFields ? (
+                    <div className="text-sm text-muted-foreground">Loading fields...</div>
+                  ) : fieldsData?.items && fieldsData.items.length > 0 ? (
+                    <DynamicFieldRenderer
+                      fields={fieldsData.items as any}
+                      values={fieldValues}
+                      onChange={handleFieldChange}
+                      disabled={createMutation.isPending}
+                    />
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      No custom fields configured for this content type.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end gap-4 pt-4">
               <Button

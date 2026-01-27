@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/utils/trpc";
 import { ArrowLeft } from "lucide-react";
 import { useContentTypes, useOrigins } from "@/hooks/use-metadata";
+import { DynamicFieldRenderer } from "@/components/request/dynamic-field-renderer";
 
 type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 type Patologia = "INSONIA" | "ANSIEDADE" | "DOR" | "ESTRESSE" | "INFLAMACAO" | "OUTRO";
@@ -50,6 +51,7 @@ interface RequestData {
   priority: Priority;
   deadline: string | null;
   patologia: Patologia | null;
+  fieldValues?: Array<{ field: { name: string }; value: any }>;
 }
 
 export default function EditRequestPage() {
@@ -71,11 +73,20 @@ export default function EditRequestPage() {
     patologia: "" as Patologia | "",
   });
 
+  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: request, isLoading } = useQuery<RequestData>(
     (trpc.request.getById.queryOptions as any)({ id: requestId })
   );
+
+  const { data: fieldsData } = useQuery({
+    ...trpc.contentTypeField.listByContentType.queryOptions({ 
+      contentTypeId: request?.contentType?.id ?? "" 
+    }),
+    enabled: !!request?.contentType?.id,
+  });
 
   useEffect(() => {
     if (request) {
@@ -88,6 +99,16 @@ export default function EditRequestPage() {
         deadline: request.deadline ? request.deadline.split("T")[0] : "",
         patologia: request.patologia || "",
       });
+
+      if (request.fieldValues && request.fieldValues.length > 0) {
+        const valuesMap: Record<string, any> = {};
+        for (const fv of request.fieldValues) {
+          if (fv.field?.name) {
+            valuesMap[fv.field.name] = fv.value;
+          }
+        }
+        setFieldValues(valuesMap);
+      }
     }
   }, [request]);
 
@@ -139,6 +160,10 @@ export default function EditRequestPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleFieldChange = (fieldName: string, value: any) => {
+    setFieldValues(prev => ({ ...prev, [fieldName]: value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -153,6 +178,7 @@ export default function EditRequestPage() {
       priority: formData.priority,
       deadline: formData.deadline ? new Date(formData.deadline) : undefined,
       patologia: formData.patologia ? formData.patologia as Patologia : undefined,
+      fieldValues: Object.keys(fieldValues).length > 0 ? fieldValues : undefined,
     };
 
     if (isRejected) {
@@ -347,6 +373,26 @@ export default function EditRequestPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {request?.contentType?.id && (
+              <div className="space-y-6 pt-4 border-t">
+                <div>
+                  <h3 className="text-sm font-medium mb-4">Custom Fields</h3>
+                  {fieldsData?.items && fieldsData.items.length > 0 ? (
+                    <DynamicFieldRenderer
+                      fields={fieldsData.items as any}
+                      values={fieldValues}
+                      onChange={handleFieldChange}
+                      disabled={updateMutation.isPending || correctMutation.isPending}
+                    />
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      No custom fields configured.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end gap-4 pt-4">
               <Button
