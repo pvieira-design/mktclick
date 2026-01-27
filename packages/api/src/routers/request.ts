@@ -96,6 +96,7 @@ export const requestRouter = router({
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
+        include: { createdBy: true },
       }),
       db.request.count({ where }),
     ]);

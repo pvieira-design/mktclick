@@ -12,7 +12,7 @@ interface RequestCardProps {
     priority: string;
     deadline: Date | null;
     createdAt: Date;
-    createdBy: { name: string | null };
+    createdBy: { name: string | null } | null;
   };
 }
 
@@ -90,7 +90,7 @@ export function RequestCard({ request }: RequestCardProps) {
       </CardContent>
       <CardFooter className="flex justify-between text-xs text-muted-foreground pt-2 border-t">
         <div>
-          Criado por <span className="font-medium text-foreground">{request.createdBy.name || "Desconhecido"}</span> em {formatDate(request.createdAt)}
+          Criado por <span className="font-medium text-foreground">{request.createdBy?.name || "Desconhecido"}</span> em {formatDate(request.createdAt)}
         </div>
         {request.deadline && (
           <div className="font-medium">
