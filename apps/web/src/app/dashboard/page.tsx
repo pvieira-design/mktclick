@@ -3,22 +3,40 @@
 import { useState } from "react";
 import type { ComponentProps } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { RequestCard } from "@/components/request-card";
 import { RequestFilters } from "@/components/request-filters";
 import { trpc } from "@/utils/trpc";
+
+interface RequestListResponse {
+  items: Array<{
+    id: string;
+    title: string;
+    contentType: string;
+    status: string;
+    origin: string;
+    priority: string;
+    deadline: Date | null;
+    createdAt: Date;
+    createdBy: { name: string | null };
+  }>;
+  total: number;
+  hasMore: boolean;
+}
 
 export default function DashboardPage() {
   const [filters, setFilters] = useState<ComponentProps<typeof RequestFilters>['filters']>({});
   const [page, setPage] = useState(1);
   const limit = 20;
 
-  // Cast to any to bypass potential type inference issues with tRPC in this environment
-  const { data, isLoading, error } = (trpc.request.list.useQuery as any)({
-    ...filters,
-    page,
-    limit,
-  });
+  const { data, isLoading, error } = useQuery<RequestListResponse>(
+    (trpc.request.list.queryOptions as any)({
+      ...filters,
+      page,
+      limit,
+    })
+  );
 
   const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
@@ -51,7 +69,7 @@ export default function DashboardPage() {
       
       {data && data.items.length > 0 && (
         <div className="grid gap-4">
-          {data.items.map((request: any) => (
+          {data.items.map((request) => (
             <RequestCard key={request.id} request={request} />
           ))}
         </div>

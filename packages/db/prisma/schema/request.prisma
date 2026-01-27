@@ -1,0 +1,98 @@
+// Enums for Request Management
+enum RequestStatus {
+  DRAFT
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ContentType {
+  VIDEO_UGC
+  VIDEO_INSTITUCIONAL
+  CARROSSEL
+  POST_UNICO
+  STORIES
+  REELS
+}
+
+enum RequestOrigin {
+  OSLO
+  INTERNO
+  INFLUENCER
+}
+
+enum Patologia {
+  INSONIA
+  ANSIEDADE
+  DOR
+  ESTRESSE
+  INFLAMACAO
+  OUTRO
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum RequestAction {
+  CREATED
+  UPDATED
+  SUBMITTED
+  REVIEW_STARTED
+  APPROVED
+  REJECTED
+  CORRECTED
+  CANCELLED
+}
+
+// Request Model
+model Request {
+  id              String         @id @default(cuid())
+  title           String
+  description     String         @db.Text
+  contentType     ContentType
+  origin          RequestOrigin
+  status          RequestStatus  @default(DRAFT)
+  priority        Priority       @default(MEDIUM)
+  deadline        DateTime?
+  patologia       Patologia?
+  rejectionReason String?        @db.Text
+  createdById     String
+  reviewedById    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  createdBy User              @relation("RequestCreator", fields: [createdById], references: [id])
+  reviewedBy User?            @relation("RequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  history    RequestHistory[]
+
+  @@index([createdById])
+  @@index([reviewedById])
+  @@index([status])
+  @@map("request")
+}
+
+// RequestHistory Model
+model RequestHistory {
+  id        String        @id @default(cuid())
+  requestId String
+  action    RequestAction
+  changedById String
+  oldValues Json?
+  newValues Json?
+  createdAt DateTime      @default(now())
+
+  // Relations
+  request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  changedBy User    @relation("HistoryChanger", fields: [changedById], references: [id])
+
+  @@index([requestId])
+  @@index([changedById])
+  @@map("request_history")
+}

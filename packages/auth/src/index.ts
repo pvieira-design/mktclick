@@ -3,6 +3,7 @@ import { env } from "@marketingclickcannabis/env/server";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { admin } from "better-auth/plugins";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -13,5 +14,10 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  plugins: [nextCookies()],
+  plugins: [
+    nextCookies(),
+    admin({
+      defaultRole: "admin",
+    }),
+  ],
 });
