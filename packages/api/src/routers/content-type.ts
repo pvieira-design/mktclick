@@ -6,13 +6,52 @@ import db from "@marketingclickcannabis/db";
 import { adminProcedure, publicProcedure, router } from "../index";
 
 export const contentTypeRouter = router({
-  list: publicProcedure.query(async () => {
-    const items = await db.contentType.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-    });
-    return { items };
-  }),
+  list: publicProcedure
+    .input(
+      z.object({
+        search: z.string().optional(),
+        isActive: z.enum(["all", "active", "inactive"]).optional().default("all"),
+        page: z.number().int().positive().optional().default(1),
+        limit: z.number().int().positive().max(100).optional().default(50),
+      }).optional()
+    )
+    .query(async ({ input }) => {
+      const { search, isActive, page, limit } = input ?? { isActive: "all", page: 1, limit: 50 };
+      
+      const where: any = {};
+      
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: "insensitive" } },
+          { slug: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+        ];
+      }
+      
+      if (isActive === "active") {
+        where.isActive = true;
+      } else if (isActive === "inactive") {
+        where.isActive = false;
+      }
+      
+      const [items, total] = await Promise.all([
+        db.contentType.findMany({
+          where,
+          orderBy: { name: "asc" },
+          skip: ((page ?? 1) - 1) * (limit ?? 50),
+          take: limit ?? 50,
+        }),
+        db.contentType.count({ where }),
+      ]);
+      
+      return { 
+        items, 
+        total,
+        page: page ?? 1,
+        limit: limit ?? 50,
+        hasMore: ((page ?? 1) * (limit ?? 50)) < total,
+      };
+    }),
 
   getById: publicProcedure
     .input(z.object({ id: z.string().cuid() }))
