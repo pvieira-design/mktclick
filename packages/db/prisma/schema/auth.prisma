@@ -1,22 +1,32 @@
-model User {
-  id            String    @id
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  role          String?   @default("admin")
-  banned        Boolean?  @default(false)
-  banReason     String?
-  banExpires    DateTime?
-  accounts      Account[]
-  sessions      Session[]
-  createdRequests Request[] @relation("RequestCreator")
-  reviewedRequests Request[] @relation("RequestReviewer")
-  requestHistories RequestHistory[] @relation("HistoryChanger")
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
 
-  @@map("user")
+model User {
+   id                 String    @id
+   name               String
+   email              String    @unique
+   emailVerified      Boolean   @default(false)
+   image              String?
+   createdAt          DateTime  @default(now())
+   updatedAt          DateTime  @updatedAt
+   role               UserRole  @default(USER)
+   banned             Boolean?  @default(false)
+   banReason          String?
+   banExpires         DateTime?
+   mustChangePassword Boolean   @default(false)
+   
+   // Relations
+   accounts           Account[]
+   sessions           Session[]
+   createdRequests    Request[] @relation("RequestCreator")
+   reviewedRequests   Request[] @relation("RequestReviewer")
+   requestHistories   RequestHistory[] @relation("HistoryChanger")
+   areaMemberships    AreaMember[] @relation("UserAreaMemberships")
+
+   @@map("user")
 }
 
 model Session {

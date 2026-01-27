@@ -1,0 +1,61 @@
+// Enum for Custom Field Types
+enum FieldType {
+  TEXT          // Short text input
+  TEXTAREA      // Long text input
+  WYSIWYG       // Rich text editor (Novel)
+  FILE          // File upload (Vercel Blob)
+  DATE          // Date picker
+  DATETIME      // DateTime picker
+  SELECT        // Dropdown with options
+  NUMBER        // Numeric input
+  CHECKBOX      // Boolean checkbox
+  URL           // URL/Link input
+  AD_REFERENCE  // Reference to Ad (future)
+}
+
+// ContentTypeField Model - Custom fields configuration per ContentType
+model ContentTypeField {
+  id             String      @id @default(cuid())
+  contentTypeId  String
+  name           String      // camelCase field name (e.g., "titulo", "descricao")
+  label          String      // Display label (e.g., "Titulo", "Descricao")
+  fieldType      FieldType
+  required       Boolean     @default(false)
+  order          Int         @default(0)
+  options        Json?       // For SELECT: ["option1", "option2"]
+  placeholder    String?
+  helpText       String?
+  defaultValue   String?
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  
+  // Relations
+  contentType    ContentType @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+  fieldValues    RequestFieldValue[]
+  
+  // Constraints: field name must be unique per content type
+  @@unique([contentTypeId, name])
+  @@index([contentTypeId])
+  @@map("content_type_field")
+}
+
+// RequestFieldValue Model - Stores custom field values for each request
+model RequestFieldValue {
+  id            String            @id @default(cuid())
+  requestId     String
+  fieldId       String
+  value         Json              // Stores the value (any type as JSON)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  
+  // Relations
+  request       Request           @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  field         ContentTypeField  @relation(fields: [fieldId], references: [id])
+  
+  // Constraints: one value per field per request
+  @@unique([requestId, fieldId])
+  @@index([requestId])
+  @@index([fieldId])
+  @@map("request_field_value")
+}

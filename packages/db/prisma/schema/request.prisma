@@ -8,21 +8,6 @@ enum RequestStatus {
   CANCELLED
 }
 
-enum ContentType {
-  VIDEO_UGC
-  VIDEO_INSTITUCIONAL
-  CARROSSEL
-  POST_UNICO
-  STORIES
-  REELS
-}
-
-enum RequestOrigin {
-  OSLO
-  INTERNO
-  INFLUENCER
-}
-
 enum Patologia {
   INSONIA
   ANSIEDADE
@@ -50,13 +35,16 @@ enum RequestAction {
   CANCELLED
 }
 
+// Import models from content-config.prisma
+// ContentType and Origin models are defined in content-config.prisma
+
 // Request Model
 model Request {
   id              String         @id @default(cuid())
   title           String
   description     String         @db.Text
-  contentType     ContentType
-  origin          RequestOrigin
+  contentTypeId   String
+  originId        String
   status          RequestStatus  @default(DRAFT)
   priority        Priority       @default(MEDIUM)
   deadline        DateTime?
@@ -64,16 +52,24 @@ model Request {
   rejectionReason String?        @db.Text
   createdById     String
   reviewedById    String?
+  currentStepId   String?        // Current workflow step
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
   // Relations
-  createdBy User              @relation("RequestCreator", fields: [createdById], references: [id])
-  reviewedBy User?            @relation("RequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  history    RequestHistory[]
+  contentType  ContentType         @relation(fields: [contentTypeId], references: [id])
+  origin       Origin              @relation(fields: [originId], references: [id])
+  createdBy    User                @relation("RequestCreator", fields: [createdById], references: [id])
+  reviewedBy   User?               @relation("RequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  currentStep  WorkflowStep?       @relation("CurrentStep", fields: [currentStepId], references: [id])
+  history      RequestHistory[]
+  fieldValues  RequestFieldValue[]
 
+  @@index([contentTypeId])
+  @@index([originId])
   @@index([createdById])
   @@index([reviewedById])
+  @@index([currentStepId])
   @@index([status])
   @@map("request")
 }

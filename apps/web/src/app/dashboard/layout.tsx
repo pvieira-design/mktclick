@@ -20,7 +20,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen">
-      <Sidebar>
+      <Sidebar userRole={session.user.role ?? undefined}>
         <ProfileWidget session={session} />
       </Sidebar>
       <main className="flex-1 overflow-auto p-6">{children}</main>

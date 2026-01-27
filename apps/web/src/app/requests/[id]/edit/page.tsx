@@ -19,26 +19,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/utils/trpc";
 import { ArrowLeft } from "lucide-react";
+import { useContentTypes, useOrigins } from "@/hooks/use-metadata";
 
-type ContentType = "VIDEO_UGC" | "VIDEO_INSTITUCIONAL" | "CARROSSEL" | "POST_UNICO" | "STORIES" | "REELS";
-type RequestOrigin = "OSLO" | "INTERNO" | "INFLUENCER";
 type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 type Patologia = "INSONIA" | "ANSIEDADE" | "DOR" | "ESTRESSE" | "INFLAMACAO" | "OUTRO";
-
-const contentTypeLabels: Record<ContentType, string> = {
-  VIDEO_UGC: "Vídeo UGC",
-  VIDEO_INSTITUCIONAL: "Vídeo Institucional",
-  CARROSSEL: "Carrossel",
-  POST_UNICO: "Post Único",
-  STORIES: "Stories",
-  REELS: "Reels",
-};
-
-const originLabels: Record<RequestOrigin, string> = {
-  OSLO: "Oslo",
-  INTERNO: "Interno",
-  INFLUENCER: "Influencer",
-};
 
 const priorityLabels: Record<Priority, string> = {
   LOW: "Baixa",
@@ -60,9 +44,9 @@ interface RequestData {
   id: string;
   title: string;
   description: string;
-  contentType: ContentType;
+  contentType: { id: string; name: string } | null;
+  origin: { id: string; name: string } | null;
   status: string;
-  origin: RequestOrigin;
   priority: Priority;
   deadline: string | null;
   patologia: Patologia | null;
@@ -74,11 +58,14 @@ export default function EditRequestPage() {
   const queryClient = useQueryClient();
   const requestId = params.id as string;
 
+  const { data: contentTypes, isLoading: loadingContentTypes } = useContentTypes();
+  const { data: origins, isLoading: loadingOrigins } = useOrigins();
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    contentType: "" as ContentType | "",
-    origin: "" as RequestOrigin | "",
+    contentTypeId: "",
+    originId: "",
     priority: "MEDIUM" as Priority,
     deadline: "",
     patologia: "" as Patologia | "",
@@ -95,8 +82,8 @@ export default function EditRequestPage() {
       setFormData({
         title: request.title,
         description: request.description,
-        contentType: request.contentType,
-        origin: request.origin,
+        contentTypeId: request.contentType?.id || "",
+        originId: request.origin?.id || "",
         priority: request.priority,
         deadline: request.deadline ? request.deadline.split("T")[0] : "",
         patologia: request.patologia || "",
@@ -141,11 +128,11 @@ export default function EditRequestPage() {
     if (formData.description.length > 5000) {
       newErrors.description = "Descrição deve ter no máximo 5000 caracteres";
     }
-    if (!formData.contentType) {
-      newErrors.contentType = "Tipo de conteúdo é obrigatório";
+    if (!formData.contentTypeId) {
+      newErrors.contentTypeId = "Tipo de conteúdo é obrigatório";
     }
-    if (!formData.origin) {
-      newErrors.origin = "Origem é obrigatória";
+    if (!formData.originId) {
+      newErrors.originId = "Origem é obrigatória";
     }
 
     setErrors(newErrors);
@@ -161,8 +148,8 @@ export default function EditRequestPage() {
       id: requestId,
       title: formData.title,
       description: formData.description,
-      contentType: formData.contentType as ContentType,
-      origin: formData.origin as RequestOrigin,
+      contentTypeId: formData.contentTypeId,
+      originId: formData.originId,
       priority: formData.priority,
       deadline: formData.deadline ? new Date(formData.deadline) : undefined,
       patologia: formData.patologia ? formData.patologia as Patologia : undefined,
@@ -274,40 +261,42 @@ export default function EditRequestPage() {
               <div className="space-y-2">
                 <Label>Tipo de Conteúdo *</Label>
                 <Select
-                  value={formData.contentType}
-                  onValueChange={(value) => setFormData({ ...formData, contentType: value as ContentType })}
+                  value={formData.contentTypeId}
+                  onValueChange={(value) => setFormData({ ...formData, contentTypeId: value || "" })}
+                  disabled={loadingContentTypes}
                 >
-                  <SelectTrigger className={errors.contentType ? "border-destructive" : ""}>
-                    <SelectValue placeholder="Selecione o tipo" />
+                  <SelectTrigger className={errors.contentTypeId ? "border-destructive" : ""}>
+                    <SelectValue placeholder={loadingContentTypes ? "Carregando..." : "Selecione o tipo"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {(Object.entries(contentTypeLabels) as [ContentType, string][]).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    {contentTypes?.map((ct) => (
+                      <SelectItem key={ct.id} value={ct.id}>{ct.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.contentType && (
-                  <p className="text-sm text-destructive">{errors.contentType}</p>
+                {errors.contentTypeId && (
+                  <p className="text-sm text-destructive">{errors.contentTypeId}</p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <Label>Origem *</Label>
                 <Select
-                  value={formData.origin}
-                  onValueChange={(value) => setFormData({ ...formData, origin: value as RequestOrigin })}
+                  value={formData.originId}
+                  onValueChange={(value) => setFormData({ ...formData, originId: value || "" })}
+                  disabled={loadingOrigins}
                 >
-                  <SelectTrigger className={errors.origin ? "border-destructive" : ""}>
-                    <SelectValue placeholder="Selecione a origem" />
+                  <SelectTrigger className={errors.originId ? "border-destructive" : ""}>
+                    <SelectValue placeholder={loadingOrigins ? "Carregando..." : "Selecione a origem"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {(Object.entries(originLabels) as [RequestOrigin, string][]).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    {origins?.map((origin) => (
+                      <SelectItem key={origin.id} value={origin.id}>{origin.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.origin && (
-                  <p className="text-sm text-destructive">{errors.origin}</p>
+                {errors.originId && (
+                  <p className="text-sm text-destructive">{errors.originId}</p>
                 )}
               </div>
             </div>

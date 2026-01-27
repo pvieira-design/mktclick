@@ -1,0 +1,36 @@
+// ContentType Model - Tipos de conteúdo configuráveis
+model ContentType {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?   @db.Text
+  icon        String?   // Nome do ícone para UI (ex: "Video", "Image")
+  color       String?   // Cor hex, ex: "#10B981"
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  requests         Request[]
+  fields           ContentTypeField[]
+  workflowSteps    WorkflowStep[]
+  areaPermissions  ContentTypeAreaPermission[]
+  
+  @@map("content_type")
+}
+
+// Origin Model - Origens de produção configuráveis
+model Origin {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?   @db.Text
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  requests    Request[]
+  
+  @@map("origin")
+}

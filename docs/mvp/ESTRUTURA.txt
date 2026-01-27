@@ -1,0 +1,139 @@
+📁 /docs/mvp/ - Documentação Modular do MVP
+═══════════════════════════════════════════════════════════════
+
+📄 README.md (2.0K)
+   └─ Índice navegável com 4 seções principais
+   └─ Leitura rápida (5 min)
+   └─ Busca por tópico específico
+
+📚 CORE (Essencial)
+───────────────────
+01-visao-geral.md (2.2K)
+   ├─ Objetivo do sistema
+   ├─ Problema que resolve
+   ├─ Contexto do negócio
+   └─ Métricas de sucesso
+
+02-escopo-mvp.md (2.0K)
+   ├─ Funcionalidades incluídas
+   ├─ Campos do request
+   ├─ O que NÃO está no MVP
+   └─ Scope boundaries
+
+03-modelo-dados.md (4.7K)
+   ├─ Schema Prisma completo
+   ├─ Validações de campo
+   ├─ Relações entre tabelas
+   └─ Índices de performance
+
+🎨 FEATURES
+───────────
+04-content-types.md (4.9K)
+   ├─ Tabela resumida (6 tipos)
+   ├─ Detalhamento por tipo
+   ├─ Quando usar cada um
+   └─ Matriz de decisão
+
+05-regras-negocio.md (5.9K)
+   ├─ 6 decisões estratégicas
+   ├─ Fluxo de status (diagrama)
+   ├─ Tabela de transições
+   ├─ Edge cases
+   └─ Regras de validação
+
+06-permissoes-roles.md (4.4K)
+   ├─ Roles existentes
+   ├─ Matriz de permissões
+   ├─ Verificações de autorização
+   ├─ Hierarquia de áreas
+   └─ Fluxo de aprovação típico
+
+💻 IMPLEMENTAÇÃO
+────────────────
+07-interface-ui.md (10K)
+   ├─ Design System (Untitled UI)
+   ├─ Cores de status
+   ├─ 5 páginas principais
+   ├─ Componentes utilizados
+   ├─ Notificações (Sonner)
+   └─ Responsividade
+
+08-arquitetura-tecnica.md (9.0K)
+   ├─ Stack tecnológico
+   ├─ Estrutura de arquivos
+   ├─ tRPC router structure
+   ├─ Validação com Zod
+   ├─ Timezone handling
+   ├─ Autenticação
+   ├─ Performance
+   └─ Segurança
+
+📖 USO
+──────
+09-exemplos-uso.md (7.4K)
+   ├─ Cenário A: Happy Path
+   ├─ Cenário B: Rejeição e Ajuste
+   ├─ Cenário C: Cancelamento
+   ├─ Cenário D: Auto-aprovação
+   └─ Cenário E: Filtros e Busca
+
+10-faq-troubleshooting.md (7.4K)
+   ├─ 10 Perguntas Frequentes
+   ├─ 10 Problemas Comuns
+   ├─ Soluções passo-a-passo
+   ├─ Checklist de troubleshooting
+   └─ Contato para suporte
+
+🌍 CONTEXTO
+───────────
+11-contexto-click-cannabis.md (8.7K)
+   ├─ Oslo (Agência Externa)
+   ├─ Click (Equipe Interna)
+   ├─ Áreas Organizacionais
+   ├─ UGC Creator vs Embaixador
+   ├─ Glossário Completo (40+ termos)
+   └─ Contexto de Negócio
+
+🚀 ROADMAP
+──────────
+12-roadmap.md (6.8K)
+   ├─ Fase 1: MVP (Atual)
+   ├─ Fase 2: Integração
+   ├─ Fase 3: IA e Automação
+   ├─ Fase 4: Expansão
+   ├─ Checklist de Implementação
+   ├─ Commit Strategy
+   ├─ Métricas de Sucesso
+   └─ Próximos Passos
+
+═══════════════════════════════════════════════════════════════
+
+📊 ESTATÍSTICAS
+───────────────
+Total de Arquivos: 13 (1 README + 12 documentos)
+Tamanho Total: ~73 KB
+Linhas Totais: ~1.500+
+Seções: 4 (Core, Features, Implementação, Uso, Contexto, Roadmap)
+
+🔗 NAVEGAÇÃO
+────────────
+✅ Links internos entre arquivos
+✅ Breadcrumb em cada página (◀ Anterior | Índice | Próximo ▶)
+✅ Índice navegável no README
+✅ Busca por tópico específico
+✅ Leitura rápida (5 min)
+
+📝 CARACTERÍSTICAS
+──────────────────
+✅ Modularizado (cada arquivo tem responsabilidade clara)
+✅ Sem duplicação de conteúdo
+✅ Tabelas e diagramas
+✅ Exemplos práticos
+✅ Glossário completo
+✅ Troubleshooting detalhado
+✅ Roadmap com checklist
+✅ Formatação Markdown consistente
+
+═══════════════════════════════════════════════════════════════
+Última atualização: 27/01/2026
+Documento original mantido: /docs/MVP_REQUESTS_SISTEMA_APROVACAO.md

@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useContentTypes } from "@/hooks/use-metadata";
 
 type RequestStatus =
   | "DRAFT"
@@ -18,18 +19,10 @@ type RequestStatus =
   | "REJECTED"
   | "CANCELLED";
 
-type ContentType =
-  | "VIDEO_UGC"
-  | "VIDEO_INSTITUCIONAL"
-  | "CARROSSEL"
-  | "POST_UNICO"
-  | "STORIES"
-  | "REELS";
-
 interface RequestFiltersProps {
   filters: {
     status?: RequestStatus;
-    contentType?: ContentType;
+    contentType?: string;
     search?: string;
   };
   onChange: (filters: RequestFiltersProps["filters"]) => void;
@@ -37,6 +30,7 @@ interface RequestFiltersProps {
 
 export function RequestFilters({ filters, onChange }: RequestFiltersProps) {
   const [searchValue, setSearchValue] = useState(filters.search || "");
+  const { data: contentTypes } = useContentTypes();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -56,7 +50,7 @@ export function RequestFilters({ filters, onChange }: RequestFiltersProps) {
 
   const handleContentTypeChange = (value: string | null) => {
     if (!value) return;
-    const newType = value === "ALL" ? undefined : (value as ContentType);
+    const newType = value === "ALL" ? undefined : value;
     onChange({ ...filters, contentType: newType });
   };
 
@@ -101,14 +95,11 @@ export function RequestFilters({ filters, onChange }: RequestFiltersProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">Todos</SelectItem>
-            <SelectItem value="VIDEO_UGC">Vídeo UGC</SelectItem>
-            <SelectItem value="VIDEO_INSTITUCIONAL">
-              Vídeo Institucional
-            </SelectItem>
-            <SelectItem value="CARROSSEL">Carrossel</SelectItem>
-            <SelectItem value="POST_UNICO">Post Único</SelectItem>
-            <SelectItem value="STORIES">Stories</SelectItem>
-            <SelectItem value="REELS">Reels</SelectItem>
+            {contentTypes.map((type) => (
+              <SelectItem key={type.id} value={type.id}>
+                {type.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

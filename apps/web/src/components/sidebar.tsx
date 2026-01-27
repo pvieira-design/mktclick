@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -14,10 +14,12 @@ const navigation = [
 
 interface SidebarProps {
   children?: ReactNode;
+  userRole?: string;
 }
 
-export function Sidebar({ children }: SidebarProps) {
+export function Sidebar({ children, userRole }: SidebarProps) {
   const pathname = usePathname();
+  const isAdmin = userRole === "SUPER_ADMIN";
 
   return (
     <aside className="flex h-full w-60 flex-col border-r bg-card">
@@ -45,6 +47,21 @@ export function Sidebar({ children }: SidebarProps) {
             </Link>
           );
         })}
+
+        {isAdmin && (
+          <Link href="/admin">
+            <Button
+              variant={pathname.startsWith("/admin") ? "secondary" : "ghost"}
+              className={cn(
+                "w-full justify-start gap-2",
+                pathname.startsWith("/admin") && "bg-muted"
+              )}
+            >
+              <Settings className="size-4" />
+              Admin Panel
+            </Button>
+          </Link>
+        )}
       </nav>
 
       {children}

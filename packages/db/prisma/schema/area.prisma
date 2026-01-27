@@ -1,0 +1,44 @@
+// Enum for Area Positions
+enum AreaPosition {
+  HEAD        // Máximo 1 por área - Líder/responsável principal
+  COORDINATOR // Máximo 1 por área - Coordenador/braço direito
+  STAFF       // Ilimitado - Membros da equipe
+}
+
+// Area Model - Equipes/Responsáveis de trabalho
+model Area {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  slug        String        @unique
+  description String?       @db.Text
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  members              AreaMember[]
+  workflowSteps        WorkflowStep[]
+  contentTypePermissions ContentTypeAreaPermission[]
+
+  @@map("area")
+}
+
+// AreaMember Model - Membros em cada área com posições
+model AreaMember {
+  id        String        @id @default(cuid())
+  userId    String
+  areaId    String
+  position  AreaPosition
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+   // Relations
+   user User @relation("UserAreaMemberships", fields: [userId], references: [id], onDelete: Cascade)
+   area Area @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+  // Constraint: usuário não pode duplicar na mesma área
+  @@unique([userId, areaId])
+  @@index([userId])
+  @@index([areaId])
+  @@map("area_member")
+}

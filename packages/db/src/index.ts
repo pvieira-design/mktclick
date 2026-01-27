@@ -9,18 +9,28 @@ const prisma = new PrismaClient({ adapter });
 export const db = prisma;
 export default prisma;
 
-// Re-export enums and types for use in other packages
+// Re-export enums for use in other packages
 export {
   RequestStatus,
-  ContentType,
-  RequestOrigin,
   Patologia,
   Priority,
   RequestAction,
+  UserRole,
+  AreaPosition,
+  FieldType,
 } from "../prisma/generated/enums";
 
+// Re-export types
 export type {
   Request,
   RequestHistory,
   User,
+  ContentType,
+  Origin,
+  Area,
+  AreaMember,
+  ContentTypeField,
+  RequestFieldValue,
+  WorkflowStep,
+  ContentTypeAreaPermission,
 } from "../prisma/generated/client";

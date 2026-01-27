@@ -6,9 +6,11 @@ interface RequestCardProps {
   request: {
     id: string;
     title: string;
-    contentType: string;
+    contentTypeId?: string;
+    contentType?: { name: string } | string | null;
     status: string;
-    origin: string;
+    originId?: string;
+    origin?: { name: string } | string | null;
     priority: string;
     deadline: Date | null;
     createdAt: Date;
@@ -63,6 +65,26 @@ export function RequestCard({ request }: RequestCardProps) {
     return new Intl.DateTimeFormat("pt-BR").format(new Date(date));
   };
 
+  const getContentTypeName = () => {
+    if (typeof request.contentType === 'object' && request.contentType?.name) {
+      return request.contentType.name;
+    }
+    if (typeof request.contentType === 'string') {
+      return contentTypeLabels[request.contentType] || request.contentType;
+    }
+    return "Tipo não definido";
+  };
+
+  const getOriginName = () => {
+    if (typeof request.origin === 'object' && request.origin?.name) {
+      return request.origin.name;
+    }
+    if (typeof request.origin === 'string') {
+      return originLabels[request.origin] || request.origin;
+    }
+    return "Origem não definida";
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -78,10 +100,10 @@ export function RequestCard({ request }: RequestCardProps) {
       <CardContent>
         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
           <span className="font-medium text-foreground">
-            {contentTypeLabels[request.contentType] || request.contentType}
+            {getContentTypeName()}
           </span>
           <span className="text-muted-foreground/40">|</span>
-          <span>{originLabels[request.origin] || request.origin}</span>
+          <span>{getOriginName()}</span>
           <span className="text-muted-foreground/40">|</span>
           <span className={request.priority === "URGENT" ? "text-destructive font-medium" : ""}>
             {priorityLabels[request.priority] || request.priority}

@@ -1,0 +1,46 @@
+// WorkflowStep Model - Defines steps in the approval workflow per ContentType
+model WorkflowStep {
+  id                    String      @id @default(cuid())
+  contentTypeId         String
+  name                  String      // Step name (e.g., "Criacao", "Design Review", "Aprovacao Final")
+  description           String?     @db.Text
+  order                 Int         // Step order (1, 2, 3...)
+  requiredFieldsToEnter String[]    // Field names required to enter this step
+  requiredFieldsToExit  String[]    // Field names required to exit/complete this step
+  approverAreaId        String?     // Area whose members can approve
+  approverPositions     String[]    // Positions that can approve: ["HEAD", "COORDINATOR", "STAFF"]
+  isActive              Boolean     @default(true)
+  isFinalStep           Boolean     @default(false)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  
+  // Relations
+  contentType           ContentType @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+  approverArea          Area?       @relation(fields: [approverAreaId], references: [id])
+  currentRequests       Request[]   @relation("CurrentStep")
+  
+  @@index([contentTypeId])
+  @@index([order])
+  @@index([approverAreaId])
+  @@map("workflow_step")
+}
+
+// ContentTypeAreaPermission Model - Defines which areas can create requests of a ContentType
+model ContentTypeAreaPermission {
+  id              String      @id @default(cuid())
+  contentTypeId   String
+  areaId          String
+  canCreate       Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Relations
+  contentType     ContentType @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+  area            Area        @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  
+  // Constraint: one permission per content type + area combo
+  @@unique([contentTypeId, areaId])
+  @@index([contentTypeId])
+  @@index([areaId])
+  @@map("content_type_area_permission")
+}
