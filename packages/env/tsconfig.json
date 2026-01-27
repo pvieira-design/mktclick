@@ -1,0 +1,3 @@
+{
+  "extends": "@marketingclickcannabis/config/tsconfig.base.json"
+}

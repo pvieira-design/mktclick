@@ -1,0 +1,24 @@
+{
+  "name": "@marketingclickcannabis/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@marketingclickcannabis/db": "*",
+    "@marketingclickcannabis/env": "*",
+    "better-auth": "^1.4.9",
+    "dotenv": "^17.2.2",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@marketingclickcannabis/config": "*",
+    "typescript": "^5"
+  }
+}
