@@ -59,9 +59,11 @@ export default function ContentTypesPage() {
             Gerencie os tipos de conteúdo disponíveis no sistema.
           </p>
         </div>
-        <Button href="/admin/content-types/new" iconLeading={Plus}>
-          Novo Tipo de Conteúdo
-        </Button>
+        <Link href="/admin/content-types/new">
+          <Button iconLeading={Plus}>
+            Novo Tipo de Conteúdo
+          </Button>
+        </Link>
       </div>
 
       <div className="flex gap-4">
