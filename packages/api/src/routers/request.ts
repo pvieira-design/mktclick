@@ -21,7 +21,7 @@ const listInputSchema = z.object({
 });
 
 const getByIdInputSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
 });
 
 const createInputSchema = z.object({
@@ -35,7 +35,7 @@ const createInputSchema = z.object({
 });
 
 const updateInputSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
   title: z.string().min(3).max(200).optional(),
   description: z.string().min(10).max(5000).optional(),
   contentType: z.nativeEnum(ContentType).optional(),
@@ -46,24 +46,24 @@ const updateInputSchema = z.object({
 });
 
 const submitInputSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
 });
 
 const startReviewInputSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
 });
 
 const approveInputSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
 });
 
 const rejectInputSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
   reason: z.string().min(10).max(2000),
 });
 
 const correctInputSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
   title: z.string().min(3).max(200).optional(),
   description: z.string().min(10).max(5000).optional(),
   contentType: z.nativeEnum(ContentType).optional(),
@@ -74,7 +74,7 @@ const correctInputSchema = z.object({
 });
 
 const cancelInputSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().cuid(),
 });
 
 export const requestRouter = router({
