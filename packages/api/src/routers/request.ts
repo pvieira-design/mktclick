@@ -13,8 +13,8 @@ import db, {
 import { protectedProcedure, router } from "../index";
 
 const listInputSchema = z.object({
-  status: z.nativeEnum(RequestStatus).optional(),
-  contentType: z.nativeEnum(ContentType).optional(),
+  status: z.string().optional(),
+  contentType: z.string().optional(),
   search: z.string().optional(),
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(100).default(20),
@@ -83,8 +83,8 @@ export const requestRouter = router({
     const skip = (page - 1) * limit;
 
     const where = {
-      ...(status && { status }),
-      ...(contentType && { contentType }),
+      ...(status && { status: status as RequestStatus }),
+      ...(contentType && { contentType: contentType as ContentType }),
       ...(search && {
         title: { contains: search, mode: "insensitive" as const },
       }),
