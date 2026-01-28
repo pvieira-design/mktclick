@@ -43,11 +43,14 @@ export const creatorRouter = router({
           select: {
             id: true,
             name: true,
+            imageUrl: true,
             email: true,
             phone: true,
             instagram: true,
             type: true,
             isActive: true,
+            contractStartDate: true,
+            contractEndDate: true,
             responsibleId: true,
             responsible: {
               select: {
