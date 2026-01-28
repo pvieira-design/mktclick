@@ -25,11 +25,34 @@ model Creator {
   updatedAt          DateTime      @updatedAt
 
   // Relations
-  responsible User @relation("CreatorResponsible", fields: [responsibleId], references: [id], onDelete: Cascade)
+  responsible    User                   @relation("CreatorResponsible", fields: [responsibleId], references: [id], onDelete: Cascade)
+  participations CreatorParticipation[]
 
   // Indexes
   @@index([responsibleId])
   @@index([type])
   @@index([isActive])
   @@map("creator")
+}
+
+// CreatorParticipation Model - Participacoes de criadores em requests
+model CreatorParticipation {
+  id                String   @id @default(cuid())
+  creatorId         String
+  requestId         String
+  participationDate DateTime
+  location          String?
+  valuePaid         Decimal  @db.Decimal(10, 2)
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  request Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  // Indexes (NO unique constraint - multiple participations allowed)
+  @@index([creatorId])
+  @@index([requestId])
+  @@map("creator_participation")
 }

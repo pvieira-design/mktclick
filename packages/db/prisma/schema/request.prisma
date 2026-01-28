@@ -57,13 +57,14 @@ model Request {
   updatedAt       DateTime       @updatedAt
 
   // Relations
-  contentType  ContentType         @relation(fields: [contentTypeId], references: [id])
-  origin       Origin              @relation(fields: [originId], references: [id])
-  createdBy    User                @relation("RequestCreator", fields: [createdById], references: [id])
-  reviewedBy   User?               @relation("RequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  currentStep  WorkflowStep?       @relation("CurrentStep", fields: [currentStepId], references: [id])
-  history      RequestHistory[]
-  fieldValues  RequestFieldValue[]
+  contentType           ContentType            @relation(fields: [contentTypeId], references: [id])
+  origin                Origin                 @relation(fields: [originId], references: [id])
+  createdBy             User                   @relation("RequestCreator", fields: [createdById], references: [id])
+  reviewedBy            User?                  @relation("RequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  currentStep           WorkflowStep?          @relation("CurrentStep", fields: [currentStepId], references: [id])
+  history               RequestHistory[]
+  fieldValues           RequestFieldValue[]
+  creatorParticipations CreatorParticipation[]
 
   @@index([contentTypeId])
   @@index([originId])
