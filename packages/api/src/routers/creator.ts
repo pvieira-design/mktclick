@@ -104,11 +104,14 @@ export const creatorRouter = router({
     .input(
       z.object({
         name: z.string().min(2).max(100),
-        email: z.string().email().optional(),
+        imageUrl: z.string().url().optional().or(z.literal("")),
+        email: z.string().email().optional().or(z.literal("")),
         phone: z.string().optional(),
         instagram: z.string().optional(),
         type: z.nativeEnum(CreatorType),
         responsibleId: z.string().cuid(),
+        contractStartDate: z.coerce.date().optional(),
+        contractEndDate: z.coerce.date().optional(),
         notes: z.string().optional(),
       })
     )
@@ -140,11 +143,14 @@ export const creatorRouter = router({
       const creator = await db.creator.create({
         data: {
           name: input.name,
-          email: input.email,
+          imageUrl: input.imageUrl || null,
+          email: input.email || null,
           phone: input.phone,
           instagram: input.instagram,
           type: input.type,
           responsibleId: input.responsibleId,
+          contractStartDate: input.contractStartDate,
+          contractEndDate: input.contractEndDate,
           notes: input.notes,
           isActive: true,
         },
@@ -167,17 +173,20 @@ export const creatorRouter = router({
       z.object({
         id: z.string().cuid(),
         name: z.string().min(2).max(100).optional(),
-        email: z.string().email().optional(),
-        phone: z.string().optional(),
-        instagram: z.string().optional(),
+        imageUrl: z.string().url().optional().or(z.literal("")).nullable(),
+        email: z.string().email().optional().or(z.literal("")).nullable(),
+        phone: z.string().optional().nullable(),
+        instagram: z.string().optional().nullable(),
         type: z.nativeEnum(CreatorType).optional(),
         responsibleId: z.string().cuid().optional(),
-        notes: z.string().optional(),
+        contractStartDate: z.coerce.date().optional().nullable(),
+        contractEndDate: z.coerce.date().optional().nullable(),
+        notes: z.string().optional().nullable(),
         isActive: z.boolean().optional(),
       })
     )
     .mutation(async ({ input }) => {
-      const { id, ...updateData } = input;
+      const { id, imageUrl, email, ...restData } = input;
 
       const creator = await db.creator.findUnique({ where: { id } });
       if (!creator) {
@@ -187,9 +196,9 @@ export const creatorRouter = router({
         });
       }
 
-      if (updateData.responsibleId) {
+      if (restData.responsibleId) {
         const responsible = await db.user.findUnique({
-          where: { id: updateData.responsibleId },
+          where: { id: restData.responsibleId },
         });
 
         if (!responsible) {
@@ -200,9 +209,10 @@ export const creatorRouter = router({
         }
       }
 
-      if (updateData.email && updateData.email !== creator.email) {
+      const normalizedEmail = email === "" ? null : email;
+      if (normalizedEmail && normalizedEmail !== creator.email) {
         const existingEmail = await db.creator.findFirst({
-          where: { email: updateData.email, id: { not: id } },
+          where: { email: normalizedEmail, id: { not: id } },
         });
 
         if (existingEmail) {
@@ -212,6 +222,12 @@ export const creatorRouter = router({
           });
         }
       }
+
+      const updateData = {
+        ...restData,
+        ...(imageUrl !== undefined && { imageUrl: imageUrl === "" ? null : imageUrl }),
+        ...(email !== undefined && { email: normalizedEmail }),
+      };
 
       const updated = await db.creator.update({
         where: { id },
