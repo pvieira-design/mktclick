@@ -1,0 +1,35 @@
+// Enum for Creator Types
+enum CreatorType {
+  UGC_CREATOR
+  EMBAIXADOR
+  ATLETA
+  INFLUENCIADOR
+  ATOR_MODELO
+}
+
+// Creator Model - Criadores de conteúdo
+model Creator {
+  id                 String        @id @default(cuid())
+  name               String
+  imageUrl           String?       // URL da foto
+  type               CreatorType
+  responsibleId      String
+  email              String?
+  phone              String?
+  instagram          String?
+  contractStartDate  DateTime?
+  contractEndDate    DateTime?
+  notes              String?       @db.Text
+  isActive           Boolean       @default(true)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  // Relations
+  responsible User @relation("CreatorResponsible", fields: [responsibleId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([responsibleId])
+  @@index([type])
+  @@index([isActive])
+  @@map("creator")
+}

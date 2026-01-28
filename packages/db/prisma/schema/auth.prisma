@@ -18,13 +18,14 @@ model User {
    banExpires         DateTime?
    mustChangePassword Boolean   @default(false)
    
-   // Relations
-   accounts           Account[]
-   sessions           Session[]
-   createdRequests    Request[] @relation("RequestCreator")
-   reviewedRequests   Request[] @relation("RequestReviewer")
-   requestHistories   RequestHistory[] @relation("HistoryChanger")
-   areaMemberships    AreaMember[] @relation("UserAreaMemberships")
+    // Relations
+    accounts           Account[]
+    sessions           Session[]
+    createdRequests    Request[] @relation("RequestCreator")
+    reviewedRequests   Request[] @relation("RequestReviewer")
+    requestHistories   RequestHistory[] @relation("HistoryChanger")
+    areaMemberships    AreaMember[] @relation("UserAreaMemberships")
+    responsibleForCreators Creator[] @relation("CreatorResponsible")
 
    @@map("user")
 }
