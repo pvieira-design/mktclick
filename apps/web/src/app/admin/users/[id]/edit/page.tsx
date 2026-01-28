@@ -4,18 +4,12 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { Select } from "@/components/base/select/select";
+import { Badge } from "@/components/base/badges/badges";
 import {
   Card,
   CardContent,
@@ -34,10 +28,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Key } from "lucide-react";
+import { ArrowLeft, Plus, Trash01, Key01 } from "@untitledui/icons";
 import Link from "next/link";
 
 export default function EditUserPage() {
@@ -177,8 +170,8 @@ export default function EditUserPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href={"/admin/users" as any} className={buttonVariants({ variant: "ghost", size: "icon" })}>
-          <ArrowLeft className="h-4 w-4" />
+        <Link href={"/admin/users" as any}>
+          <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Edit User</h1>
@@ -194,63 +187,55 @@ export default function EditUserPage() {
               <CardDescription>Update user account details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" value={userData.email} disabled />
-                <p className="text-sm text-muted-foreground">Email cannot be changed.</p>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="John Doe"
-                  required
-                  minLength={2}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value as any })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USER">User</SelectItem>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Input
+                label="Email"
+                value={userData.email}
+                isDisabled
+                hint="Email cannot be changed."
+              />
+              <Input
+                label="Name"
+                value={formData.name}
+                onChange={(value) => setFormData({ ...formData, name: value })}
+                placeholder="John Doe"
+                isRequired
+              />
+              <Select
+                label="Role"
+                selectedKey={formData.role}
+                onSelectionChange={(key) => setFormData({ ...formData, role: key as any })}
+              >
+                <Select.Item id="USER" label="User" />
+                <Select.Item id="ADMIN" label="Admin" />
+                <Select.Item id="SUPER_ADMIN" label="Super Admin" />
+              </Select>
+              
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="banned">Banned</Label>
+                  <p className="text-sm font-medium">Banned</p>
                   <p className="text-sm text-muted-foreground">Prevent user from logging in</p>
                 </div>
                 <Checkbox
-                  id="banned"
-                  checked={formData.banned}
-                  onCheckedChange={(checked) => setFormData({ ...formData, banned: checked === true })}
+                  isSelected={formData.banned}
+                  onChange={(checked) => setFormData({ ...formData, banned: checked })}
                 />
               </div>
+              
               {formData.banned && (
-                <div className="grid gap-2">
-                  <Label htmlFor="banReason">Ban Reason</Label>
-                  <Textarea
-                    id="banReason"
-                    value={formData.banReason}
-                    onChange={(e) => setFormData({ ...formData, banReason: e.target.value })}
-                    placeholder="Reason for banning..."
-                  />
-                </div>
+                <TextArea
+                  label="Ban Reason"
+                  value={formData.banReason}
+                  onChange={(value) => setFormData({ ...formData, banReason: value })}
+                  placeholder="Reason for banning..."
+                />
               )}
               <div className="flex justify-end">
-                <Button type="submit" disabled={updateUserMutation.isPending}>
-                  {updateUserMutation.isPending ? "Saving..." : "Save Changes"}
+                <Button 
+                  type="submit" 
+                  isDisabled={updateUserMutation.isPending}
+                  isLoading={updateUserMutation.isPending}
+                >
+                  Save Changes
                 </Button>
               </div>
             </CardContent>
@@ -263,21 +248,23 @@ export default function EditUserPage() {
             <CardDescription>Set a new temporary password for this user</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="New password (min 8 characters)"
-                minLength={8}
-              />
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(value) => setNewPassword(value)}
+                  placeholder="New password (min 8 characters)"
+                />
+              </div>
               <Button 
                 type="button" 
-                variant="outline"
+                color="secondary"
                 onClick={handleResetPassword}
-                disabled={resetPasswordMutation.isPending || newPassword.length < 8}
+                isDisabled={resetPasswordMutation.isPending || newPassword.length < 8}
+                isLoading={resetPasswordMutation.isPending}
+                iconLeading={Key01}
               >
-                <Key className="mr-2 h-4 w-4" />
                 Reset
               </Button>
             </div>
@@ -295,35 +282,36 @@ export default function EditUserPage() {
             <CardDescription>Manage user's area assignments</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Select value={selectedAreaId} onValueChange={(val) => setSelectedAreaId(val || "")}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select an area..." />
-                </SelectTrigger>
-                <SelectContent>
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <Select 
+                  selectedKey={selectedAreaId} 
+                  onSelectionChange={(key) => setSelectedAreaId(key as string)}
+                  placeholder="Select an area..."
+                >
                   {availableAreas.map(area => (
-                    <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
+                    <Select.Item key={area.id} id={area.id} label={area.name} />
                   ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedPosition} onValueChange={(v) => setSelectedPosition(v as any)}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="HEAD">Head</SelectItem>
-                  <SelectItem value="COORDINATOR">Coordinator</SelectItem>
-                  <SelectItem value="STAFF">Staff</SelectItem>
-                </SelectContent>
-              </Select>
+                </Select>
+              </div>
+              <div className="w-[140px]">
+                <Select 
+                  selectedKey={selectedPosition} 
+                  onSelectionChange={(key) => setSelectedPosition(key as any)}
+                >
+                  <Select.Item id="HEAD" label="Head" />
+                  <Select.Item id="COORDINATOR" label="Coordinator" />
+                  <Select.Item id="STAFF" label="Staff" />
+                </Select>
+              </div>
               <Button 
                 type="button" 
-                variant="outline" 
+                color="secondary" 
                 onClick={handleAddToArea} 
-                disabled={!selectedAreaId || addToAreaMutation.isPending}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+                isDisabled={!selectedAreaId || addToAreaMutation.isPending}
+                isLoading={addToAreaMutation.isPending}
+                iconLeading={Plus}
+              />
             </div>
 
             {userData.areaMemberships.length > 0 ? (
@@ -332,11 +320,11 @@ export default function EditUserPage() {
                   <div key={membership.area.id} className="flex items-center justify-between p-3 rounded-md border">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{membership.area.name}</span>
-                      <Badge variant="secondary">{membership.position}</Badge>
+                      <Badge color="gray" size="sm">{membership.position}</Badge>
                     </div>
                     <AlertDialog>
-                      <AlertDialogTrigger className={buttonVariants({ variant: "ghost", size: "icon" })}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                      <AlertDialogTrigger>
+                        <Button color="tertiary" size="sm" iconLeading={Trash01} />
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>

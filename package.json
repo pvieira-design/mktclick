@@ -15,7 +15,8 @@
     "db:push": "npm run db:push --workspace @marketingclickcannabis/db",
     "db:studio": "npm run db:studio --workspace @marketingclickcannabis/db",
     "db:generate": "npm run db:generate --workspace @marketingclickcannabis/db",
-    "db:migrate": "npm run db:migrate --workspace @marketingclickcannabis/db"
+    "db:migrate": "npm run db:migrate --workspace @marketingclickcannabis/db",
+    "db:seed": "npm run db:seed --workspace @marketingclickcannabis/db"
   },
   "dependencies": {
     "@marketingclickcannabis/env": "*",

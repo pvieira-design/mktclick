@@ -3,17 +3,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/base/buttons/button";
+import { Badge } from "@/components/base/badges/badges";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { Select } from "@/components/base/select/select";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/utils/trpc";
 import { usePermissions } from "@/hooks/use-permissions";
-import { CheckCircle, XCircle, ArrowRight, Flag } from "lucide-react";
+import { CheckCircle, XCircle, ArrowRight, Flag01 } from "@untitledui/icons";
 
 interface WorkflowStep {
   id: string;
@@ -152,13 +145,13 @@ export function WorkflowActions({
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Etapa atual:</span>
-              <Badge variant="outline" className="font-medium">
+              <Badge color="gray">
                 {currentStep.order + 1} de {request.totalSteps}
               </Badge>
               <span className="font-medium">{currentStep.name}</span>
               {currentStep.isFinalStep && (
-                <Badge variant="default" className="ml-2">
-                  <Flag className="mr-1 h-3 w-3" />
+                <Badge color="brand" className="ml-2">
+                  <Flag01 className="mr-1 h-3 w-3" />
                   Final
                 </Badge>
               )}
@@ -177,30 +170,25 @@ export function WorkflowActions({
             {permissions.canAdvance && (
               <Button
                 onClick={() => advanceStepMutation.mutate({ id: request.id } as any)}
-                disabled={advanceStepMutation.isPending}
+                isDisabled={advanceStepMutation.isPending}
+                iconLeading={currentStep.isFinalStep ? CheckCircle : ArrowRight}
               >
                 {advanceStepMutation.isPending ? (
                   "Processando..."
                 ) : currentStep.isFinalStep ? (
-                  <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Aprovar e Finalizar
-                  </>
+                  "Aprovar e Finalizar"
                 ) : (
-                  <>
-                    <ArrowRight className="mr-2 h-4 w-4" />
-                    Aprovar e Avançar
-                  </>
+                  "Aprovar e Avançar"
                 )}
               </Button>
             )}
 
             {permissions.canReject && (
               <Button
-                variant="destructive"
+                color="primary-destructive"
                 onClick={() => setRejectDialogOpen(true)}
+                iconLeading={XCircle}
               >
-                <XCircle className="mr-2 h-4 w-4" />
                 Rejeitar
               </Button>
             )}
@@ -210,10 +198,9 @@ export function WorkflowActions({
 
       {permissions.canCancel && request.status !== "APPROVED" && (
         <Button
-          variant="outline"
-          className="text-destructive"
+          color="tertiary-destructive"
           onClick={() => cancelMutation.mutate({ id: request.id } as any)}
-          disabled={cancelMutation.isPending}
+          isDisabled={cancelMutation.isPending}
         >
           {cancelMutation.isPending ? "Cancelando..." : "Cancelar Request"}
         </Button>
@@ -229,41 +216,38 @@ export function WorkflowActions({
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Retornar para etapa</Label>
-              <Select value={targetStepId} onValueChange={(val) => setTargetStepId(val || "")}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma etapa..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.isArray(previousSteps) && previousSteps.map((step: WorkflowStep) => (
-                    <SelectItem key={step.id} value={step.id}>
-                      {step.order + 1}. {step.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+            <div>
+              <Select 
+                label="Retornar para etapa"
+                selectedKey={targetStepId} 
+                onSelectionChange={(key) => setTargetStepId(key as string || "")}
+                placeholder="Selecione uma etapa..."
+              >
+                {Array.isArray(previousSteps) && previousSteps.map((step: WorkflowStep) => (
+                  <Select.Item key={step.id} id={step.id} label={`${step.order + 1}. ${step.name}`} />
+                ))}
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Motivo da rejeição (mínimo 10 caracteres)</Label>
-              <Textarea
+            <div>
+              <TextArea
+                label="Motivo da rejeição (mínimo 10 caracteres)"
                 value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
+                onChange={(value) => setRejectionReason(value)}
                 placeholder="Explique o motivo da rejeição..."
-                className="min-h-24"
+                rows={4}
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+            <Button color="secondary" onClick={() => setRejectDialogOpen(false)}>
               Cancelar
             </Button>
             <Button
-              variant="destructive"
+              color="primary-destructive"
               onClick={handleReject}
-              disabled={rejectToStepMutation.isPending}
+              isDisabled={rejectToStepMutation.isPending}
             >
               {rejectToStepMutation.isPending ? "Rejeitando..." : "Confirmar Rejeição"}
             </Button>

@@ -1,21 +1,13 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/base/input/input";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { Button } from "@/components/base/buttons/button";
+import { Select } from "@/components/base/select/select";
 import { NovelEditor } from "@/components/ui/novel-editor";
-import { Upload, X, FileIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { UploadCloud01, XClose, File04 } from "@untitledui/icons";
 
 type FieldType = 
   | "TEXT"
@@ -102,23 +94,23 @@ export function DynamicFieldRenderer({
             id={field.name}
             type="text"
             value={value}
-            onChange={(e) => onChange(field.name, e.target.value)}
+            onChange={(val) => onChange(field.name, val)}
             placeholder={field.placeholder || undefined}
-            disabled={disabled}
-            className={cn(error && "border-destructive")}
+            isDisabled={disabled}
+            isInvalid={!!error}
           />
         );
 
       case "TEXTAREA":
         return (
-          <Textarea
+          <TextArea
             id={field.name}
             value={value}
-            onChange={(e) => onChange(field.name, e.target.value)}
+            onChange={(val) => onChange(field.name, val)}
             placeholder={field.placeholder || undefined}
-            disabled={disabled}
+            isDisabled={disabled}
             rows={4}
-            className={cn(error && "border-destructive")}
+            isInvalid={!!error}
           />
         );
 
@@ -129,7 +121,7 @@ export function DynamicFieldRenderer({
             onChange={(v) => onChange(field.name, v)}
             placeholder={field.placeholder || "Start writing..."}
             disabled={disabled}
-            className={cn(error && "border-destructive")}
+            className={error ? "border-destructive" : ""}
           />
         );
 
@@ -138,7 +130,7 @@ export function DynamicFieldRenderer({
           <div className="space-y-2">
             {value ? (
               <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
-                <FileIcon className="h-4 w-4 text-muted-foreground" />
+                <File04 className="h-4 w-4 text-muted-foreground" />
                 <a
                   href={value}
                   target="_blank"
@@ -150,17 +142,16 @@ export function DynamicFieldRenderer({
                 {!disabled && (
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon"
+                    color="tertiary"
+                    size="sm"
                     onClick={() => removeFile(field.name)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                    iconLeading={XClose}
+                  />
                 )}
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Input
+                <input
                   id={field.name}
                   type="file"
                   onChange={(e) => {
@@ -172,11 +163,11 @@ export function DynamicFieldRenderer({
                 />
                 <Button
                   type="button"
-                  variant="outline"
+                  color="secondary"
                   onClick={() => document.getElementById(field.name)?.click()}
-                  disabled={disabled || isUploading}
+                  isDisabled={disabled || isUploading}
+                  iconLeading={UploadCloud01}
                 >
-                  <Upload className="mr-2 h-4 w-4" />
                   {isUploading ? "Uploading..." : "Choose file"}
                 </Button>
               </div>
@@ -190,9 +181,10 @@ export function DynamicFieldRenderer({
             id={field.name}
             type="date"
             value={value}
-            onChange={(e) => onChange(field.name, e.target.value)}
-            disabled={disabled}
-            className={cn("w-fit", error && "border-destructive")}
+            onChange={(val) => onChange(field.name, val)}
+            isDisabled={disabled}
+            isInvalid={!!error}
+            className="w-fit"
           />
         );
 
@@ -202,30 +194,27 @@ export function DynamicFieldRenderer({
             id={field.name}
             type="datetime-local"
             value={value}
-            onChange={(e) => onChange(field.name, e.target.value)}
-            disabled={disabled}
-            className={cn("w-fit", error && "border-destructive")}
+            onChange={(val) => onChange(field.name, val)}
+            isDisabled={disabled}
+            isInvalid={!!error}
+            className="w-fit"
           />
         );
 
       case "SELECT":
         const options = field.options || [];
+        const controlledSelectValue = typeof value === "string" ? value : "";
         return (
           <Select
-            value={value || undefined}
-            onValueChange={(v) => onChange(field.name, v)}
-            disabled={disabled}
+            selectedKey={controlledSelectValue || null}
+            onSelectionChange={(key) => onChange(field.name, key)}
+            isDisabled={disabled}
+            placeholder={field.placeholder || "Select an option..."}
+            isInvalid={!!error}
           >
-            <SelectTrigger className={cn(error && "border-destructive")}>
-              <SelectValue placeholder={field.placeholder || "Select an option..."} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((opt) => (
-                <SelectItem key={opt} value={opt}>
-                  {opt}
-                </SelectItem>
-              ))}
-            </SelectContent>
+            {options.map((opt) => (
+              <Select.Item key={opt} id={opt} label={opt} />
+            ))}
           </Select>
         );
 
@@ -235,26 +224,24 @@ export function DynamicFieldRenderer({
             id={field.name}
             type="number"
             value={value}
-            onChange={(e) => onChange(field.name, e.target.value ? Number(e.target.value) : "")}
+            onChange={(val) => onChange(field.name, val ? Number(val) : "")}
             placeholder={field.placeholder || undefined}
-            disabled={disabled}
-            className={cn("w-fit", error && "border-destructive")}
+            isDisabled={disabled}
+            isInvalid={!!error}
+            className="w-fit"
           />
         );
 
       case "CHECKBOX":
         return (
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id={field.name}
-              checked={value === true || value === "true"}
-              onCheckedChange={(checked) => onChange(field.name, checked)}
-              disabled={disabled}
-            />
-            <Label htmlFor={field.name} className="cursor-pointer text-sm">
-              {field.placeholder || field.label}
-            </Label>
-          </div>
+          <Checkbox
+            id={field.name}
+            isSelected={value === true || value === "true"}
+            onChange={(checked) => onChange(field.name, checked)}
+            isDisabled={disabled}
+          >
+            {field.placeholder || field.label}
+          </Checkbox>
         );
 
       case "URL":
@@ -263,10 +250,10 @@ export function DynamicFieldRenderer({
             id={field.name}
             type="url"
             value={value}
-            onChange={(e) => onChange(field.name, e.target.value)}
+            onChange={(val) => onChange(field.name, val)}
             placeholder={field.placeholder || "https://"}
-            disabled={disabled}
-            className={cn(error && "border-destructive")}
+            isDisabled={disabled}
+            isInvalid={!!error}
           />
         );
 
@@ -293,10 +280,10 @@ export function DynamicFieldRenderer({
       {sortedFields.map((field) => (
         <div key={field.id} className="space-y-2">
           {field.fieldType !== "CHECKBOX" && (
-            <Label htmlFor={field.name} className="text-sm font-medium">
+            <label htmlFor={field.name} className="text-sm font-medium">
               {field.label}
               {field.required && <span className="text-destructive ml-1">*</span>}
-            </Label>
+            </label>
           )}
 
           {renderField(field)}

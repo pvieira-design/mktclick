@@ -39,6 +39,7 @@ export function NovelEditor({
     ],
     content: value,
     editable: !disabled,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       if (onChange) {
         onChange(editor.getHTML());

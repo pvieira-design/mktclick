@@ -4,16 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { Select } from "@/components/base/select/select";
+import { Badge } from "@/components/base/badges/badges";
 import {
   Card,
   CardContent,
@@ -21,9 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft, Plus, X } from "@untitledui/icons";
 import Link from "next/link";
 
 interface AreaAssignment {
@@ -98,8 +91,8 @@ export default function CreateUserPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href={"/admin/users" as any} className={buttonVariants({ variant: "ghost", size: "icon" })}>
-          <ArrowLeft className="h-4 w-4" />
+        <Link href={"/admin/users" as any}>
+          <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Create User</h1>
@@ -115,59 +108,39 @@ export default function CreateUserPage() {
               <CardDescription>User account details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="John Doe"
-                  required
-                  minLength={2}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="john@example.com"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Temporary Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="••••••••"
-                  required
-                  minLength={8}
-                />
-                <p className="text-sm text-muted-foreground">
-                  User will be required to change this password on first login.
-                </p>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value as any })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USER">User</SelectItem>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Input
+                label="Name"
+                value={formData.name}
+                onChange={(value) => setFormData({ ...formData, name: value })}
+                placeholder="John Doe"
+                isRequired
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={(value) => setFormData({ ...formData, email: value })}
+                placeholder="john@example.com"
+                isRequired
+              />
+              <Input
+                label="Temporary Password"
+                type="password"
+                value={formData.password}
+                onChange={(value) => setFormData({ ...formData, password: value })}
+                placeholder="••••••••"
+                isRequired
+                hint="User will be required to change this password on first login."
+              />
+              <Select
+                label="Role"
+                selectedKey={formData.role}
+                onSelectionChange={(key) => setFormData({ ...formData, role: key as any })}
+              >
+                <Select.Item id="USER" label="User" />
+                <Select.Item id="ADMIN" label="Admin" />
+                <Select.Item id="SUPER_ADMIN" label="Super Admin" />
+              </Select>
             </CardContent>
           </Card>
 
@@ -177,30 +150,36 @@ export default function CreateUserPage() {
               <CardDescription>Assign user to work areas (optional)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Select value={selectedAreaId} onValueChange={(val) => setSelectedAreaId(val || "")}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select an area..." />
-                  </SelectTrigger>
-                  <SelectContent>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <Select 
+                    selectedKey={selectedAreaId} 
+                    onSelectionChange={(key) => setSelectedAreaId(key as string)}
+                    placeholder="Select an area..."
+                  >
                     {availableAreas.map(area => (
-                      <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
+                      <Select.Item key={area.id} id={area.id} label={area.name} />
                     ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedPosition} onValueChange={(v) => setSelectedPosition(v as any)}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HEAD">Head</SelectItem>
-                    <SelectItem value="COORDINATOR">Coordinator</SelectItem>
-                    <SelectItem value="STAFF">Staff</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button type="button" variant="outline" onClick={handleAddArea} disabled={!selectedAreaId}>
-                  <Plus className="h-4 w-4" />
-                </Button>
+                  </Select>
+                </div>
+                <div className="w-[140px]">
+                  <Select 
+                    selectedKey={selectedPosition} 
+                    onSelectionChange={(key) => setSelectedPosition(key as any)}
+                  >
+                    <Select.Item id="HEAD" label="Head" />
+                    <Select.Item id="COORDINATOR" label="Coordinator" />
+                    <Select.Item id="STAFF" label="Staff" />
+                  </Select>
+                </div>
+                <Button 
+                  type="button" 
+                  color="secondary" 
+                  size="sm" 
+                  iconLeading={Plus} 
+                  onClick={handleAddArea} 
+                  isDisabled={!selectedAreaId}
+                />
               </div>
 
               {areaAssignments.length > 0 ? (
@@ -209,16 +188,15 @@ export default function CreateUserPage() {
                     <div key={assignment.areaId} className="flex items-center justify-between p-3 rounded-md border">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{assignment.areaName}</span>
-                        <Badge variant="secondary">{assignment.position}</Badge>
+                        <Badge color="gray" type="pill-color" size="sm">{assignment.position}</Badge>
                       </div>
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="icon"
+                        color="tertiary"
+                        size="sm"
+                        iconLeading={X}
                         onClick={() => handleRemoveArea(assignment.areaId)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      />
                     </div>
                   ))}
                 </div>
@@ -229,11 +207,17 @@ export default function CreateUserPage() {
           </Card>
 
           <div className="flex justify-end gap-4">
-            <Link href={"/admin/users" as any} className={buttonVariants({ variant: "outline" })}>
-              Cancel
+            <Link href={"/admin/users" as any}>
+              <Button color="secondary">
+                Cancel
+              </Button>
             </Link>
-            <Button type="submit" disabled={createUserMutation.isPending}>
-              {createUserMutation.isPending ? "Creating..." : "Create User"}
+            <Button 
+              type="submit" 
+              isDisabled={createUserMutation.isPending}
+              isLoading={createUserMutation.isPending}
+            >
+              Create User
             </Button>
           </div>
         </div>

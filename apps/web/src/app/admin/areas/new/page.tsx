@@ -4,13 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { TextArea } from "@/components/base/textarea/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save01 } from "@untitledui/icons";
 import Link from "next/link";
 
 export default function NewAreaPage() {
@@ -38,17 +37,11 @@ export default function NewAreaPage() {
       .replace(/[^a-z0-9-]/g, '');
   };
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = e.target.value;
-    setName(newName);
+  const handleNameChange = (value: string) => {
+    setName(value);
     if (!isSlugManuallyEdited) {
-      setSlug(slugify(newName));
+      setSlug(slugify(value));
     }
-  };
-
-  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSlug(e.target.value);
-    setIsSlugManuallyEdited(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -65,9 +58,8 @@ export default function NewAreaPage() {
       <div className="flex items-center gap-4">
         <Link 
           href={"/admin/areas" as any}
-          className={buttonVariants({ variant: "ghost", size: "icon" })}
         >
-          <ArrowLeft className="h-4 w-4" />
+          <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">New Area</h1>
@@ -84,56 +76,44 @@ export default function NewAreaPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
-              <Input 
-                id="name" 
-                value={name} 
-                onChange={handleNameChange} 
-                placeholder="e.g. Design Team" 
-                required 
-              />
-            </div>
+            <Input 
+              label="Name"
+              value={name}
+              onChange={handleNameChange}
+              placeholder="e.g. Design Team"
+              isRequired
+            />
             
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug <span className="text-red-500">*</span></Label>
-              <Input 
-                id="slug" 
-                value={slug} 
-                onChange={handleSlugChange} 
-                placeholder="e.g. design-team" 
-                required 
-              />
-              <p className="text-xs text-muted-foreground">
-                Unique identifier used in URLs and API calls.
-              </p>
-            </div>
+            <Input 
+              label="Slug"
+              value={slug}
+              onChange={(value) => { setSlug(value); setIsSlugManuallyEdited(true); }}
+              placeholder="e.g. design-team"
+              isRequired
+              hint="Unique identifier used in URLs and API calls."
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description" 
-                value={description} 
-                onChange={(e) => setDescription(e.target.value)} 
-                placeholder="Describe what this area is responsible for..." 
-                rows={3}
-              />
-            </div>
+            <TextArea 
+              label="Description"
+              value={description}
+              onChange={(value) => setDescription(value)}
+              placeholder="Describe what this area is responsible for..."
+              rows={3}
+            />
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Link 
               href={"/admin/areas" as any}
-              className={buttonVariants({ variant: "outline" })}
             >
-              Cancel
+              <Button color="secondary">Cancel</Button>
             </Link>
-            <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending ? "Creating..." : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Create Area
-                </>
-              )}
+            <Button 
+              type="submit" 
+              isDisabled={createMutation.isPending} 
+              isLoading={createMutation.isPending} 
+              iconLeading={Save01}
+            >
+              Create Area
             </Button>
           </CardFooter>
         </form>

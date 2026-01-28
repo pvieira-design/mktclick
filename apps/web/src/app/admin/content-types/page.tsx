@@ -3,20 +3,15 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Button as ShadcnButton, buttonVariants } from "@/components/ui/button";
 import { Button } from "@/components/base/buttons/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/base/badges/badges";
+import { Table, TableCard } from "@/components/application/table/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/base/input/input";
+import { Select } from "@/components/base/select/select";
+import { NewContentTypeDrawer } from "@/components/content-type/new-content-type-drawer";
 import Link from "next/link";
-import { Edit, Plus, Power, Search } from "lucide-react";
+import { Edit01, FilterLines, Power01, Plus, SearchMd } from "@untitledui/icons";
 import { toast } from "sonner";
 
 export default function ContentTypesPage() {
@@ -24,6 +19,7 @@ export default function ContentTypesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [page, setPage] = useState(1);
+  const [isNewDrawerOpen, setIsNewDrawerOpen] = useState(false);
   const limit = 20;
   
   const { data, isLoading } = useQuery(
@@ -50,156 +46,166 @@ export default function ContentTypesPage() {
     (toggleActiveMutation.mutate as any)({ id });
   };
 
+  const columns = [
+    { id: "name", label: "Nome" },
+    { id: "slug", label: "Slug" },
+    { id: "color", label: "Cor" },
+    { id: "icon", label: "Ícone" },
+    { id: "status", label: "Status" },
+    { id: "actions", label: "Ações" },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tipos de Conteúdo</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-primary">Tipos de Conteúdo</h1>
+          <p className="text-tertiary">
             Gerencie os tipos de conteúdo disponíveis no sistema.
           </p>
         </div>
-        <Link href="/admin/content-types/new">
-          <Button iconLeading={Plus}>
-            Novo Tipo de Conteúdo
-          </Button>
-        </Link>
+        <Button iconLeading={Plus} onClick={() => setIsNewDrawerOpen(true)}>
+          Novo Tipo de Conteúdo
+        </Button>
       </div>
 
       <div className="flex gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex-1 max-w-sm">
           <Input
+            icon={SearchMd}
             placeholder="Buscar por nome ou slug..."
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+            onChange={(value) => {
+              setSearch(value);
               setPage(1);
             }}
-            className="pl-9"
           />
         </div>
         <Select 
-          value={statusFilter} 
-          onValueChange={(value) => {
-            if (value) {
-              setStatusFilter(value as "all" | "active" | "inactive");
+          selectedKey={statusFilter}
+          onSelectionChange={(key) => {
+            if (key) {
+              setStatusFilter(key as "all" | "active" | "inactive");
               setPage(1);
             }
           }}
+          placeholder="Filtrar por status"
+          placeholderIcon={FilterLines}
+          className="w-[180px]"
         >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filtrar por status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="active">Ativos</SelectItem>
-            <SelectItem value="inactive">Inativos</SelectItem>
-          </SelectContent>
+          <Select.Item id="all" label="Todos" />
+          <Select.Item id="active" label="Ativos" />
+          <Select.Item id="inactive" label="Inativos" />
         </Select>
       </div>
 
-      <div className="rounded-md border">
-        <div className="relative w-full overflow-auto">
-          <table className="w-full caption-bottom text-sm">
-            <thead className="[&_tr]:border-b">
-              <tr className="border-b transition-colors hover:bg-muted/50">
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nome</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Slug</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Cor</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Ícone</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
-                <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="[&_tr:last-child]:border-0">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b transition-colors hover:bg-muted/50">
-                    <td className="p-4"><Skeleton className="h-4 w-[150px]" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[100px]" /></td>
-                    <td className="p-4"><Skeleton className="h-6 w-6 rounded" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
-                    <td className="p-4"><Skeleton className="h-5 w-[60px]" /></td>
-                    <td className="p-4 text-right"><Skeleton className="ml-auto h-8 w-[80px]" /></td>
-                  </tr>
-                ))
-              ) : data?.items && data.items.length > 0 ? (
-                data.items.map((item) => (
-                  <tr key={item.id} className="border-b transition-colors hover:bg-muted/50">
-                    <td className="p-4 font-medium">{item.name}</td>
-                    <td className="p-4 text-muted-foreground">{item.slug}</td>
-                    <td className="p-4">
-                      <div 
-                        className="h-6 w-6 rounded border shadow-sm" 
-                        style={{ backgroundColor: item.color || '#cccccc' }} 
-                        title={item.color || 'No color'}
-                      />
-                    </td>
-                    <td className="p-4 text-muted-foreground">{item.icon || '-'}</td>
-                    <td className="p-4">
-                      <Badge variant={item.isActive ? "default" : "secondary"}>
-                        {item.isActive ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <ShadcnButton 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleToggleActive(item.id)}
-                          disabled={toggleActiveMutation.isPending}
-                          title={item.isActive ? "Desativar" : "Ativar"}
-                        >
-                          <Power className={`h-4 w-4 ${item.isActive ? "text-green-600" : "text-muted-foreground"}`} />
-                        </ShadcnButton>
-                        <Link 
-                          href={`/admin/content-types/${item.id}/edit`}
-                          className={buttonVariants({ variant: "ghost", size: "icon" })}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                    Nenhum tipo de conteúdo encontrado.
-                  </td>
-                </tr>
+      <TableCard.Root size="sm">
+        {isLoading ? (
+          <div className="p-6 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : (data?.items ?? []).length === 0 ? (
+          <div className="p-8 text-center text-tertiary">
+            Nenhum tipo de conteúdo encontrado.
+          </div>
+        ) : (
+          <Table size="sm" aria-label="Tipos de Conteúdo">
+            <Table.Header columns={columns}>
+              {(column) => (
+                <Table.Head 
+                  key={column.id} 
+                  id={column.id} 
+                  label={column.label}
+                  isRowHeader={column.id === "name"}
+                />
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </Table.Header>
+            <Table.Body items={data?.items ?? []}>
+              {(item) => (
+                <Table.Row key={item.id} id={item.id}>
+                  <Table.Cell className="font-medium text-primary">
+                    {item.name}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {item.slug}
+                  </Table.Cell>
+                  <Table.Cell>
+                    <div 
+                      className="size-6 rounded-md ring-1 ring-secondary shadow-xs" 
+                      style={{ backgroundColor: item.color || '#cccccc' }} 
+                      title={item.color || 'No color'}
+                    />
+                  </Table.Cell>
+                  <Table.Cell>
+                    {item.icon || '-'}
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Badge 
+                      color={item.isActive ? "success" : "gray"} 
+                      size="sm"
+                      type="pill-color"
+                    >
+                      {item.isActive ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <div className="flex items-center gap-1">
+                      <Button 
+                        color="tertiary"
+                        size="sm"
+                        iconLeading={Power01}
+                        onClick={() => handleToggleActive(item.id)}
+                        isDisabled={toggleActiveMutation.isPending}
+                        className={item.isActive ? "text-fg-success-primary" : ""}
+                      />
+                      <Link href={`/admin/content-types/${item.id}/edit`}>
+                        <Button 
+                          color="tertiary"
+                          size="sm"
+                          iconLeading={Edit01}
+                        />
+                      </Link>
+                    </div>
+                  </Table.Cell>
+                </Table.Row>
+              )}
+            </Table.Body>
+          </Table>
+        )}
+      </TableCard.Root>
 
       {data && data.total > limit && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-tertiary">
             Mostrando {((page - 1) * limit) + 1} a {Math.min(page * limit, data.total)} de {data.total} tipos
           </p>
           <div className="flex gap-2">
-            <ShadcnButton 
-              variant="outline" 
+            <Button 
+              color="secondary" 
               size="sm" 
               onClick={() => setPage(p => p - 1)}
-              disabled={page === 1}
+              isDisabled={page === 1}
             >
               Anterior
-            </ShadcnButton>
-            <ShadcnButton 
-              variant="outline" 
+            </Button>
+            <Button 
+              color="secondary" 
               size="sm" 
               onClick={() => setPage(p => p + 1)}
-              disabled={!data.hasMore}
+              isDisabled={!data.hasMore}
             >
               Próximo
-            </ShadcnButton>
+            </Button>
           </div>
         </div>
       )}
+
+      <NewContentTypeDrawer 
+        open={isNewDrawerOpen} 
+        onOpenChange={setIsNewDrawerOpen} 
+      />
     </div>
   );
 }

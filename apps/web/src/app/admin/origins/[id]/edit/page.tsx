@@ -4,14 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { TextArea } from "@/components/base/textarea/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save01 } from "@untitledui/icons";
 import Link from "next/link";
 
 export default function EditOriginPage() {
@@ -89,9 +88,8 @@ export default function EditOriginPage() {
       <div className="flex items-center gap-4">
         <Link 
           href={"/admin/origins" as any}
-          className={buttonVariants({ variant: "ghost", size: "icon" })}
         >
-          <ArrowLeft className="h-4 w-4" />
+          <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Edit Origin</h1>
@@ -108,56 +106,46 @@ export default function EditOriginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
-              <Input 
-                id="name" 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                placeholder="e.g. Internal Team" 
-                required 
-              />
-            </div>
+            <Input 
+              label="Name"
+              value={name} 
+              onChange={(value) => setName(value)} 
+              placeholder="e.g. Internal Team" 
+              isRequired 
+            />
             
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug <span className="text-red-500">*</span></Label>
-              <Input 
-                id="slug" 
-                value={slug} 
-                onChange={(e) => setSlug(e.target.value)} 
-                placeholder="e.g. internal-team" 
-                required 
-              />
-              <p className="text-xs text-muted-foreground">
-                Unique identifier used in URLs and API calls.
-              </p>
-            </div>
+            <Input 
+              label="Slug"
+              value={slug} 
+              onChange={(value) => setSlug(value)} 
+              placeholder="e.g. internal-team" 
+              isRequired 
+              hint="Unique identifier used in URLs and API calls."
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description" 
-                value={description} 
-                onChange={(e) => setDescription(e.target.value)} 
-                placeholder="Describe what this origin represents..." 
-                rows={3}
-              />
-            </div>
+            <TextArea 
+              label="Description"
+              value={description} 
+              onChange={(value) => setDescription(value)} 
+              placeholder="Describe what this origin represents..." 
+              rows={3}
+            />
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Link 
               href={"/admin/origins" as any}
-              className={buttonVariants({ variant: "outline" })}
             >
-              Cancel
+              <Button color="secondary">
+                Cancel
+              </Button>
             </Link>
-            <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? "Saving..." : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </>
-              )}
+            <Button 
+              type="submit" 
+              isDisabled={updateMutation.isPending}
+              isLoading={updateMutation.isPending}
+              iconLeading={Save01}
+            >
+              Save Changes
             </Button>
           </CardFooter>
         </form>

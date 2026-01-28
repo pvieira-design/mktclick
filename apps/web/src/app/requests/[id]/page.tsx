@@ -7,12 +7,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { WorkflowActions, WorkflowProgress } from "@/components/request/workflow-actions";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/base/buttons/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/base/badges/badges";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { TextArea } from "@/components/base/textarea/textarea";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { StatusBadge, type RequestStatus } from "@/components/status-badge";
 import { trpc } from "@/utils/trpc";
-import { ArrowLeft, Clock, User, Calendar, FileText, Tag, MapPin, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Clock, User01, Calendar, File04, Tag01, MarkerPin01, AlertTriangle } from "@untitledui/icons";
 
 const contentTypeLabels: Record<string, string> = {
   VIDEO_UGC: "Vídeo UGC",
@@ -221,7 +221,7 @@ export default function RequestDetailsPage() {
       <div className="container mx-auto p-6">
         <div className="text-center py-12">
           <p className="text-destructive">Erro ao carregar request</p>
-          <Button variant="outline" className="mt-4" onClick={() => router.push("/dashboard")}>
+          <Button color="secondary" className="mt-4" onClick={() => router.push("/dashboard")}>
             Voltar para Dashboard
           </Button>
         </div>
@@ -263,10 +263,10 @@ export default function RequestDetailsPage() {
         <Link key="edit" href={`/requests/${requestId}/edit` as any} className={buttonVariants({ variant: "outline" })}>
           Editar
         </Link>,
-        <Button key="submit" onClick={() => submitMutation.mutate({ id: requestId } as any)} disabled={submitMutation.isPending}>
+        <Button key="submit" onClick={() => submitMutation.mutate({ id: requestId } as any)} isDisabled={submitMutation.isPending}>
           {submitMutation.isPending ? "Submetendo..." : "Submeter para Revisão"}
         </Button>,
-        <Button key="cancel" variant="destructive" onClick={() => cancelMutation.mutate({ id: requestId } as any)} disabled={cancelMutation.isPending}>
+        <Button key="cancel" color="primary-destructive" onClick={() => cancelMutation.mutate({ id: requestId } as any)} isDisabled={cancelMutation.isPending}>
           Cancelar
         </Button>
       );
@@ -274,10 +274,10 @@ export default function RequestDetailsPage() {
 
     if (status === "PENDING") {
       actions.push(
-        <Button key="review" onClick={() => startReviewMutation.mutate({ id: requestId } as any)} disabled={startReviewMutation.isPending}>
+        <Button key="review" onClick={() => startReviewMutation.mutate({ id: requestId } as any)} isDisabled={startReviewMutation.isPending}>
           {startReviewMutation.isPending ? "Iniciando..." : "Iniciar Revisão"}
         </Button>,
-        <Button key="cancel" variant="destructive" onClick={() => cancelMutation.mutate({ id: requestId } as any)} disabled={cancelMutation.isPending}>
+        <Button key="cancel" color="primary-destructive" onClick={() => cancelMutation.mutate({ id: requestId } as any)} isDisabled={cancelMutation.isPending}>
           Cancelar
         </Button>
       );
@@ -285,10 +285,10 @@ export default function RequestDetailsPage() {
 
     if (status === "IN_REVIEW") {
       actions.push(
-        <Button key="approve" onClick={() => approveMutation.mutate({ id: requestId } as any)} disabled={approveMutation.isPending}>
+        <Button key="approve" onClick={() => approveMutation.mutate({ id: requestId } as any)} isDisabled={approveMutation.isPending}>
           {approveMutation.isPending ? "Aprovando..." : "Aprovar"}
         </Button>,
-        <Button key="reject" variant="destructive" onClick={() => setRejectDialogOpen(true)}>
+        <Button key="reject" color="primary-destructive" onClick={() => setRejectDialogOpen(true)}>
           Rejeitar
         </Button>
       );
@@ -299,7 +299,7 @@ export default function RequestDetailsPage() {
         <Link key="correct" href={`/requests/${requestId}/edit` as any} className={buttonVariants()}>
           Corrigir e Resubmeter
         </Link>,
-        <Button key="cancel" variant="destructive" onClick={() => cancelMutation.mutate({ id: requestId } as any)} disabled={cancelMutation.isPending}>
+        <Button key="cancel" color="primary-destructive" onClick={() => cancelMutation.mutate({ id: requestId } as any)} isDisabled={cancelMutation.isPending}>
           Cancelar
         </Button>
       );
@@ -333,21 +333,21 @@ export default function RequestDetailsPage() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
+                <File04 className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Tipo</p>
                   <p className="text-sm font-medium">{request.contentType?.name || "Não definido"}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <MarkerPin01 className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Origem</p>
                   <p className="text-sm font-medium">{request.origin?.name || "Não definido"}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Tag className="h-4 w-4 text-muted-foreground" />
+                <Tag01 className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Prioridade</p>
                   <p className={`text-sm font-medium ${request.priority === "URGENT" ? "text-destructive" : ""}`}>
@@ -369,7 +369,7 @@ export default function RequestDetailsPage() {
             {request.patologia && (
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Patologia</p>
-                <Badge variant="outline">{patologiaLabels[request.patologia] || request.patologia}</Badge>
+                <Badge color="gray">{patologiaLabels[request.patologia] || request.patologia}</Badge>
               </div>
             )}
 
@@ -403,7 +403,7 @@ export default function RequestDetailsPage() {
 
             {request.reviewedBy && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <User className="h-4 w-4" />
+                <User01 className="h-4 w-4" />
                 <span>Revisor: {request.reviewedBy.name || request.reviewedBy.email}</span>
               </div>
             )}
@@ -459,26 +459,24 @@ export default function RequestDetailsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="reason">Motivo (mínimo 10 caracteres)</Label>
-            <Textarea
-              id="reason"
+            <TextArea
+              label="Motivo (mínimo 10 caracteres)"
               value={rejectionReason}
-              onChange={(e) => {
-                setRejectionReason(e.target.value);
+              onChange={(value) => {
+                setRejectionReason(value);
                 setRejectionError("");
               }}
               placeholder="Explique o motivo da rejeição..."
-              className="min-h-24"
+              rows={4}
+              isInvalid={!!rejectionError}
+              hint={rejectionError}
             />
-            {rejectionError && (
-              <p className="text-sm text-destructive">{rejectionError}</p>
-            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+            <Button color="secondary" onClick={() => setRejectDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleReject} disabled={rejectMutation.isPending}>
+            <Button color="primary-destructive" onClick={handleReject} isDisabled={rejectMutation.isPending}>
               {rejectMutation.isPending ? "Rejeitando..." : "Confirmar Rejeição"}
             </Button>
           </DialogFooter>

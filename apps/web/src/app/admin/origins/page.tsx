@@ -3,11 +3,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/base/buttons/button";
+import { Badge } from "@/components/base/badges/badges";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Plus, Edit, Power } from "lucide-react";
+import { Plus, Edit01, Power01 } from "@untitledui/icons";
 
 interface Origin {
   id: string;
@@ -48,9 +48,8 @@ export default function OriginsListPage() {
             Manage production origins in the system.
           </p>
         </div>
-        <Link href={"/admin/origins/new" as any} className={buttonVariants()}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Origin
+        <Link href={"/admin/origins/new" as any}>
+          <Button iconLeading={Plus}>New Origin</Button>
         </Link>
       </div>
 
@@ -90,26 +89,25 @@ export default function OriginsListPage() {
                     <td className="p-4 text-muted-foreground">{origin.slug}</td>
                     <td className="p-4 text-muted-foreground max-w-xs truncate">{origin.description || "-"}</td>
                     <td className="p-4">
-                      <Badge variant={origin.isActive ? "default" : "secondary"}>
+                      <Badge color={origin.isActive ? "success" : "gray"} type="pill-color" size="sm">
                         {origin.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
                         <Button 
-                          variant="ghost" 
-                          size="icon"
+                          color="tertiary" 
+                          size="sm"
+                          iconLeading={Power01}
                           onClick={() => handleToggleActive(origin.id)}
-                          disabled={toggleActiveMutation.isPending}
+                          isDisabled={toggleActiveMutation.isPending}
                           title={origin.isActive ? "Deactivate" : "Activate"}
-                        >
-                          <Power className={`h-4 w-4 ${origin.isActive ? "text-green-600" : "text-muted-foreground"}`} />
-                        </Button>
+                          className={origin.isActive ? "text-green-600" : "text-muted-foreground"}
+                        />
                         <Link 
                           href={`/admin/origins/${origin.id}/edit` as any}
-                          className={buttonVariants({ variant: "ghost", size: "icon" })}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Button color="tertiary" size="sm" iconLeading={Edit01} />
                         </Link>
                       </div>
                     </td>

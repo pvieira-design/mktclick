@@ -4,16 +4,9 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/base/buttons/button";
+import { Select } from "@/components/base/select/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -33,10 +26,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Trash01, UserPlus01 } from "@untitledui/icons";
 import Link from "next/link";
 
 interface Member {
@@ -56,18 +48,6 @@ interface User {
   email: string;
   image: string | null;
 }
-
-const positionLabels: Record<string, string> = {
-  HEAD: "Head",
-  COORDINATOR: "Coordinator",
-  STAFF: "Staff",
-};
-
-const positionColors: Record<string, "default" | "secondary" | "outline"> = {
-  HEAD: "default",
-  COORDINATOR: "secondary",
-  STAFF: "outline",
-};
 
 export default function AreaMembersPage() {
   const params = useParams();
@@ -179,11 +159,8 @@ export default function AreaMembersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link 
-          href={"/admin/areas" as any}
-          className={buttonVariants({ variant: "ghost", size: "icon" })}
-        >
-          <ArrowLeft className="h-4 w-4" />
+        <Link href={"/admin/areas" as any}>
+          <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
         </Link>
         <div className="flex-1">
           {isAreaLoading ? (
@@ -204,8 +181,7 @@ export default function AreaMembersPage() {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger>
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
+            <Button iconLeading={UserPlus01}>
               Add Member
             </Button>
           </DialogTrigger>
@@ -218,50 +194,44 @@ export default function AreaMembersPage() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="user">User</Label>
-                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a user..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isUsersLoading ? (
-                      <SelectItem value="loading" disabled>Loading...</SelectItem>
-                    ) : usersData?.users && usersData.users.length > 0 ? (
-                      usersData.users.map((user: User) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.name || user.email}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="none" disabled>No users available</SelectItem>
-                    )}
-                  </SelectContent>
+                <span className="text-sm font-medium">User</span>
+                <Select 
+                  selectedKey={selectedUserId} 
+                  onSelectionChange={(key) => setSelectedUserId(key as string)}
+                  placeholder="Select a user..."
+                  className="w-full"
+                >
+                  {isUsersLoading ? (
+                    <Select.Item id="loading" label="Loading..." isDisabled />
+                  ) : usersData?.users && usersData.users.length > 0 ? (
+                    usersData.users.map((user: User) => (
+                      <Select.Item key={user.id} id={user.id} label={user.name || user.email || "Unknown"} />
+                    ))
+                  ) : (
+                    <Select.Item id="none" label="No users available" isDisabled />
+                  )}
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="position">Position</Label>
+                <span className="text-sm font-medium">Position</span>
                 <Select 
-                  value={selectedPosition} 
-                  onValueChange={setSelectedPosition}
+                  selectedKey={selectedPosition} 
+                  onSelectionChange={(key) => setSelectedPosition(key as string)}
+                  className="w-full"
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HEAD">Head (max 1)</SelectItem>
-                    <SelectItem value="COORDINATOR">Coordinator (max 1)</SelectItem>
-                    <SelectItem value="STAFF">Staff</SelectItem>
-                  </SelectContent>
+                  <Select.Item id="HEAD" label="Head (max 1)" />
+                  <Select.Item id="COORDINATOR" label="Coordinator (max 1)" />
+                  <Select.Item id="STAFF" label="Staff" />
                 </Select>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <Button color="secondary" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
               <Button 
                 onClick={handleAddMember} 
-                disabled={addMemberMutation.isPending || !selectedUserId}
+                isDisabled={addMemberMutation.isPending || !selectedUserId}
               >
                 {addMemberMutation.isPending ? "Adding..." : "Add Member"}
               </Button>
@@ -305,30 +275,25 @@ export default function AreaMembersPage() {
                       <td className="p-4 text-muted-foreground">{member.user.email}</td>
                       <td className="p-4">
                         <Select
-                          value={member.position}
-                          onValueChange={(newPosition) => handlePositionChange(member, newPosition)}
-                          disabled={updatePositionMutation.isPending}
+                          selectedKey={member.position}
+                          onSelectionChange={(key) => handlePositionChange(member, key as string)}
+                          isDisabled={updatePositionMutation.isPending}
+                          className="w-[140px]"
                         >
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="HEAD">Head</SelectItem>
-                            <SelectItem value="COORDINATOR">Coordinator</SelectItem>
-                            <SelectItem value="STAFF">Staff</SelectItem>
-                          </SelectContent>
+                          <Select.Item id="HEAD" label="Head" />
+                          <Select.Item id="COORDINATOR" label="Coordinator" />
+                          <Select.Item id="STAFF" label="Staff" />
                         </Select>
                       </td>
                       <td className="p-4 text-right">
                         <Button 
-                          variant="ghost" 
-                          size="icon"
+                          color="tertiary" 
+                          size="sm"
+                          iconLeading={Trash01}
                           onClick={() => handleRemoveMember(member.id)}
-                          disabled={removeMemberMutation.isPending}
+                          isDisabled={removeMemberMutation.isPending}
                           title="Remove member"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        />
                       </td>
                     </tr>
                   ))

@@ -4,18 +4,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/base/buttons/button";
+import { Badge } from "@/components/base/badges/badges";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Plus, Edit, Search } from "lucide-react";
+import { Input } from "@/components/base/input/input";
+import { Select } from "@/components/base/select/select";
+import { Plus, Edit01, SearchMd } from "@untitledui/icons";
 
 interface User {
   id: string;
@@ -35,12 +29,6 @@ const roleLabels: Record<string, string> = {
   USER: "User",
   ADMIN: "Admin",
   SUPER_ADMIN: "Super Admin",
-};
-
-const roleColors: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  USER: "outline",
-  ADMIN: "secondary",
-  SUPER_ADMIN: "default",
 };
 
 export default function UsersListPage() {
@@ -67,43 +55,40 @@ export default function UsersListPage() {
             Manage system users and their permissions.
           </p>
         </div>
-        <Link href={"/admin/users/new" as any} className={buttonVariants()}>
-          <Plus className="mr-2 h-4 w-4" />
-          New User
+        <Link href={"/admin/users/new" as any}>
+          <Button iconLeading={Plus}>
+            New User
+          </Button>
         </Link>
       </div>
 
       <div className="flex gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex-1 max-w-sm">
           <Input
+            icon={SearchMd}
             placeholder="Search by name or email..."
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+            onChange={(value) => {
+              setSearch(value);
               setPage(1);
             }}
-            className="pl-9"
           />
         </div>
         <Select 
-          value={roleFilter} 
-          onValueChange={(value) => {
-            if (value) {
-              setRoleFilter(value);
+          selectedKey={roleFilter} 
+          onSelectionChange={(key) => {
+            if (key) {
+              setRoleFilter(key as string);
               setPage(1);
             }
           }}
+          placeholder="Filter by role"
+          className="w-[180px]"
         >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by role" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="USER">User</SelectItem>
-            <SelectItem value="ADMIN">Admin</SelectItem>
-            <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-          </SelectContent>
+          <Select.Item id="all" label="All Roles" />
+          <Select.Item id="USER" label="User" />
+          <Select.Item id="ADMIN" label="Admin" />
+          <Select.Item id="SUPER_ADMIN" label="Super Admin" />
         </Select>
       </div>
 
@@ -144,28 +129,37 @@ export default function UsersListPage() {
                     <td className="p-4 font-medium">{user.name || "Unnamed"}</td>
                     <td className="p-4 text-muted-foreground">{user.email}</td>
                     <td className="p-4">
-                      <Badge variant={roleColors[user.role]}>
-                        {roleLabels[user.role]}
-                      </Badge>
+                      {user.role === "USER" ? (
+                        <Badge color="gray" type="pill-color" size="sm">
+                          {roleLabels[user.role]}
+                        </Badge>
+                      ) : user.role === "ADMIN" ? (
+                        <Badge color="gray" size="sm">
+                          {roleLabels[user.role]}
+                        </Badge>
+                      ) : (
+                        <Badge color="brand" size="sm">
+                          {roleLabels[user.role]}
+                        </Badge>
+                      )}
                     </td>
                     <td className="p-4">
-                      <Badge variant="outline">{user._count.areaMemberships}</Badge>
+                      <Badge color="gray" type="pill-color" size="sm">{user._count.areaMemberships}</Badge>
                     </td>
                     <td className="p-4">
                       {user.banned ? (
-                        <Badge variant="destructive">Banned</Badge>
+                        <Badge color="error" size="sm">Banned</Badge>
                       ) : user.mustChangePassword ? (
-                        <Badge variant="secondary">Pending</Badge>
+                        <Badge color="gray" size="sm">Pending</Badge>
                       ) : (
-                        <Badge variant="default">Active</Badge>
+                        <Badge color="success" size="sm">Active</Badge>
                       )}
                     </td>
                     <td className="p-4 text-right">
                       <Link 
                         href={`/admin/users/${user.id}/edit` as any}
-                        className={buttonVariants({ variant: "ghost", size: "icon" })}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Button color="tertiary" size="sm" iconLeading={Edit01} />
                       </Link>
                     </td>
                   </tr>
@@ -189,18 +183,18 @@ export default function UsersListPage() {
           </p>
           <div className="flex gap-2">
             <Button 
-              variant="outline" 
+              color="secondary" 
               size="sm" 
               onClick={() => setPage(p => p - 1)}
-              disabled={page === 1}
+              isDisabled={page === 1}
             >
               Previous
             </Button>
             <Button 
-              variant="outline" 
+              color="secondary" 
               size="sm" 
               onClick={() => setPage(p => p + 1)}
-              disabled={!data.hasMore}
+              isDisabled={!data.hasMore}
             >
               Next
             </Button>

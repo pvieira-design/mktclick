@@ -4,14 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/base/buttons/button";
+import { Input as UntitledInput } from "@/components/base/input/input";
+import { TextArea as UntitledTextArea } from "@/components/base/textarea/textarea";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
-import Link from "next/link";
+import { ArrowLeft, Save01 } from "@untitledui/icons";
+
 
 export default function NewContentTypePage() {
   const router = useRouter();
@@ -40,16 +40,15 @@ export default function NewContentTypePage() {
       .replace(/[^a-z0-9-]/g, '');
   };
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = e.target.value;
+  const handleNameChange = (newName: string) => {
     setName(newName);
     if (!isSlugManuallyEdited) {
       setSlug(slugify(newName));
     }
   };
 
-  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSlug(e.target.value);
+  const handleSlugChange = (value: string) => {
+    setSlug(value);
     setIsSlugManuallyEdited(true);
   };
 
@@ -67,19 +66,18 @@ export default function NewContentTypePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link 
+        <Button 
           href="/admin/content-types" 
-          className={buttonVariants({ variant: "ghost", size: "icon" })}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
+          color="tertiary"
+          iconLeading={ArrowLeft}
+        />
         <div>
           <h1 className="text-2xl font-bold tracking-tight">New Content Type</h1>
           <p className="text-muted-foreground">Create a new content type definition.</p>
         </div>
       </div>
 
-      <Card>
+      <Card className="!overflow-visible">
         <form onSubmit={handleSubmit}>
           <CardHeader>
             <CardTitle>Content Type Details</CardTitle>
@@ -87,93 +85,73 @@ export default function NewContentTypePage() {
               Define the properties for this content type.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
-              <Input 
-                id="name" 
-                value={name} 
-                onChange={handleNameChange} 
-                placeholder="e.g. Blog Post" 
-                required 
-              />
-            </div>
+          <CardContent className="space-y-4 overflow-visible pb-6">
+            <UntitledInput 
+              label="Name"
+              value={name} 
+              onChange={handleNameChange} 
+              placeholder="e.g. Blog Post" 
+              isRequired
+            />
             
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug <span className="text-red-500">*</span></Label>
-              <Input 
-                id="slug" 
-                value={slug} 
-                onChange={handleSlugChange} 
-                placeholder="e.g. blog-post" 
-                required 
-              />
-              <p className="text-xs text-muted-foreground">
-                Unique identifier used in URLs and API calls.
-              </p>
-            </div>
+            <UntitledInput 
+              label="Slug"
+              value={slug} 
+              onChange={handleSlugChange} 
+              placeholder="e.g. blog-post" 
+              isRequired
+              hint="Unique identifier used in URLs and API calls."
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description" 
-                value={description} 
-                onChange={(e) => setDescription(e.target.value)} 
-                placeholder="Describe what this content type is used for..." 
-                rows={3}
-              />
-            </div>
+            <UntitledTextArea 
+              label="Description"
+              value={description} 
+              onChange={setDescription} 
+              placeholder="Describe what this content type is used for..." 
+              rows={3}
+            />
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="icon">Icon Name</Label>
-                <Input 
-                  id="icon" 
-                  value={icon} 
-                  onChange={(e) => setIcon(e.target.value)} 
-                  placeholder="e.g. file-text" 
-                />
-                <p className="text-xs text-muted-foreground">
-                  Lucide icon name (optional).
-                </p>
-              </div>
+              <UntitledInput 
+                label="Icon Name"
+                value={icon} 
+                onChange={setIcon} 
+                placeholder="e.g. file-text" 
+                hint="Lucide icon name (optional)."
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="color">Color <span className="text-red-500">*</span></Label>
-                <div className="flex gap-2">
-                  <Input 
-                    id="color" 
-                    type="color" 
-                    value={color} 
-                    onChange={(e) => setColor(e.target.value)} 
-                    className="w-12 h-10 p-1 cursor-pointer"
-                    required
-                  />
-                  <Input 
-                    value={color} 
-                    onChange={(e) => setColor(e.target.value)} 
-                    placeholder="#000000" 
-                    pattern="^#[0-9A-Fa-f]{6}$"
-                    className="flex-1"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <UntitledInput 
+                  label="Color"
+                  value={color} 
+                  onChange={setColor} 
+                  placeholder="#000000" 
+                  isRequired
+                />
+                <Input 
+                  type="color" 
+                  value={color} 
+                  onChange={(e) => setColor(e.target.value)} 
+                  className="w-full h-10 p-1 cursor-pointer rounded-lg"
+                />
               </div>
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
-            <Link 
+            <Button 
               href="/admin/content-types"
-              className={buttonVariants({ variant: "outline" })}
+              color="tertiary"
             >
               Cancel
-            </Link>
-            <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending ? "Creating..." : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Create Content Type
-                </>
-              )}
+            </Button>
+            <Button 
+              type="submit" 
+              color="primary"
+              isDisabled={createMutation.isPending}
+              isLoading={createMutation.isPending}
+              iconLeading={Save01}
+            >
+              Create Content Type
             </Button>
           </CardFooter>
         </form>

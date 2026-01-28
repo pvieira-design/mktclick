@@ -4,18 +4,12 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { Select } from "@/components/base/select/select";
+import { Badge } from "@/components/base/badges/badges";
 import {
   Card,
   CardContent,
@@ -40,12 +34,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Edit, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Edit01, Trash01, ChevronUp, ChevronDown } from "@untitledui/icons";
 import Link from "next/link";
 
 const fieldTypes = [
@@ -105,6 +97,7 @@ export default function ContentTypeFieldsPage() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingField, setEditingField] = useState<Field | null>(null);
+  const [fieldToDelete, setFieldToDelete] = useState<Field | null>(null);
   const [formData, setFormData] = useState<FieldFormData>(initialFormData);
 
   const { data: contentType, isLoading: isContentTypeLoading } = useQuery(
@@ -219,8 +212,11 @@ export default function ContentTypeFieldsPage() {
     }
   };
 
-  const handleDelete = (fieldId: string) => {
-    (deleteFieldMutation.mutate as any)({ id: fieldId });
+  const handleDelete = () => {
+    if (fieldToDelete) {
+      (deleteFieldMutation.mutate as any)({ id: fieldToDelete.id });
+      setFieldToDelete(null);
+    }
   };
 
   const moveField = (index: number, direction: "up" | "down") => {
@@ -253,9 +249,8 @@ export default function ContentTypeFieldsPage() {
       <div className="flex items-center gap-4">
         <Link
           href={`/admin/content-types/${contentTypeId}/edit` as any}
-          className={buttonVariants({ variant: "ghost", size: "icon" })}
         >
-          <ArrowLeft className="h-4 w-4" />
+          <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
         </Link>
         <div className="flex-1">
           {isContentTypeLoading ? (
@@ -271,8 +266,7 @@ export default function ContentTypeFieldsPage() {
             </>
           )}
         </div>
-        <Button onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={openCreateDialog} iconLeading={Plus}>
           Add Field
         </Button>
       </div>
@@ -300,30 +294,26 @@ export default function ContentTypeFieldsPage() {
                 >
                   <div className="flex flex-col">
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
+                      color="tertiary"
+                      size="sm"
                       onClick={() => moveField(index, "up")}
-                      disabled={index === 0 || reorderFieldsMutation.isPending}
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </Button>
+                      isDisabled={index === 0 || reorderFieldsMutation.isPending}
+                      iconLeading={ChevronUp}
+                    />
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
+                      color="tertiary"
+                      size="sm"
                       onClick={() => moveField(index, "down")}
-                      disabled={index === fields.length - 1 || reorderFieldsMutation.isPending}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
+                      isDisabled={index === fields.length - 1 || reorderFieldsMutation.isPending}
+                      iconLeading={ChevronDown}
+                    />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{field.label}</span>
-                      <Badge variant="outline" className="text-xs">{field.name}</Badge>
-                      {field.required && <Badge variant="secondary" className="text-xs">Required</Badge>}
+                      <Badge color="gray" type="pill-color" size="sm">{field.name}</Badge>
+                      {field.required && <Badge color="gray" size="sm">Required</Badge>}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {fieldTypes.find(t => t.value === field.fieldType)?.label || field.fieldType}
@@ -333,32 +323,18 @@ export default function ContentTypeFieldsPage() {
 
                   <div className="flex items-center gap-1">
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      color="tertiary"
+                      size="sm"
                       onClick={() => openEditDialog(field)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger className={buttonVariants({ variant: "ghost", size: "icon" })}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete field?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will remove "{field.label}" from this content type.
-                            If requests already use this field, it will be deactivated instead.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(field.id)}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                      iconLeading={Edit01}
+                    />
+                    <Button
+                      color="tertiary"
+                      size="sm"
+                      iconLeading={Trash01}
+                      className="text-destructive"
+                      onClick={() => setFieldToDelete(field)}
+                    />
                   </div>
                 </div>
               ))}
@@ -370,6 +346,24 @@ export default function ContentTypeFieldsPage() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!fieldToDelete} onOpenChange={(open) => !open && setFieldToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete field?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove "{fieldToDelete?.label}" from this content type.
+              If requests already use this field, it will be deactivated instead.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-lg">
@@ -386,130 +380,111 @@ export default function ContentTypeFieldsPage() {
             <div className="grid gap-4 py-4">
               {!editingField && (
                 <div className="grid gap-2">
-                  <Label htmlFor="name">Field Name</Label>
                   <Input
-                    id="name"
+                    label="Field Name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(value) => setFormData({ ...formData, name: value })}
                     placeholder="field_name"
-                    pattern="^[a-z][a-z0-9_]*$"
-                    required
+                    hint="Lowercase letters, numbers, underscores. Cannot be changed later."
+                    isRequired
+                    {...{ pattern: "^[a-z][a-z0-9_]*$" }}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Lowercase letters, numbers, underscores. Cannot be changed later.
-                  </p>
                 </div>
               )}
 
               <div className="grid gap-2">
-                <Label htmlFor="label">Display Label</Label>
                 <Input
-                  id="label"
+                  label="Display Label"
                   value={formData.label}
-                  onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, label: value })}
                   placeholder="Field Label"
-                  required
+                  isRequired
                 />
               </div>
 
               {!editingField && (
                 <div className="grid gap-2">
-                  <Label htmlFor="fieldType">Field Type</Label>
                   <Select
-                    value={formData.fieldType}
-                    onValueChange={(value) => setFormData({ ...formData, fieldType: value || "TEXT" })}
+                    label="Field Type"
+                    selectedKey={formData.fieldType}
+                    onSelectionChange={(key) => setFormData({ ...formData, fieldType: key as string })}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {fieldTypes.map((type) => (
-                        <SelectItem 
-                          key={type.value} 
-                          value={type.value}
-                          disabled={type.disabled}
-                        >
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    {fieldTypes.map((type) => (
+                      <Select.Item 
+                        key={type.value} 
+                        id={type.value} 
+                        label={type.label} 
+                        isDisabled={type.disabled} 
+                      />
+                    ))}
                   </Select>
                 </div>
               )}
 
               {formData.fieldType === "SELECT" && (
                 <div className="grid gap-2">
-                  <Label htmlFor="options">Options</Label>
-                  <Textarea
-                    id="options"
+                  <TextArea
+                    label="Options"
                     value={formData.options}
-                    onChange={(e) => setFormData({ ...formData, options: e.target.value })}
+                    onChange={(value) => setFormData({ ...formData, options: value })}
                     placeholder="Option 1&#10;Option 2&#10;Option 3"
                     rows={4}
+                    hint="One option per line."
                   />
-                  <p className="text-xs text-muted-foreground">
-                    One option per line.
-                  </p>
                 </div>
               )}
 
               {["TEXT", "TEXTAREA", "URL"].includes(formData.fieldType) && (
                 <div className="grid gap-2">
-                  <Label htmlFor="placeholder">Placeholder</Label>
                   <Input
-                    id="placeholder"
+                    label="Placeholder"
                     value={formData.placeholder}
-                    onChange={(e) => setFormData({ ...formData, placeholder: e.target.value })}
+                    onChange={(value) => setFormData({ ...formData, placeholder: value })}
                     placeholder="Enter placeholder text..."
                   />
                 </div>
               )}
 
               <div className="grid gap-2">
-                <Label htmlFor="helpText">Help Text</Label>
                 <Input
-                  id="helpText"
+                  label="Help Text"
                   value={formData.helpText}
-                  onChange={(e) => setFormData({ ...formData, helpText: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, helpText: value })}
                   placeholder="Additional instructions for users..."
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="defaultValue">Default Value</Label>
                 <Input
-                  id="defaultValue"
+                  label="Default Value"
                   value={formData.defaultValue}
-                  onChange={(e) => setFormData({ ...formData, defaultValue: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, defaultValue: value })}
                   placeholder="Default value for this field"
                 />
               </div>
 
               <div className="flex items-center gap-2">
                 <Checkbox
-                  id="required"
-                  checked={formData.required}
-                  onCheckedChange={(checked) => 
+                  isSelected={formData.required}
+                  onChange={(checked) => 
                     setFormData({ ...formData, required: checked === true })
                   }
-                />
-                <Label htmlFor="required" className="cursor-pointer">
+                >
                   Required field
-                </Label>
+                </Checkbox>
               </div>
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={closeDialog}>
+              <Button type="button" color="secondary" onClick={closeDialog}>
                 Cancel
               </Button>
               <Button 
                 type="submit" 
-                disabled={createFieldMutation.isPending || updateFieldMutation.isPending}
+                isDisabled={createFieldMutation.isPending || updateFieldMutation.isPending}
+                isLoading={createFieldMutation.isPending || updateFieldMutation.isPending}
               >
-                {(createFieldMutation.isPending || updateFieldMutation.isPending) 
-                  ? "Saving..." 
-                  : editingField ? "Save Changes" : "Add Field"}
+                {editingField ? "Save Changes" : "Add Field"}
               </Button>
             </DialogFooter>
           </form>

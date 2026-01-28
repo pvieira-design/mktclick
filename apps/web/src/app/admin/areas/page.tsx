@@ -3,11 +3,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/base/buttons/button";
+import { Badge } from "@/components/base/badges/badges";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Plus, Edit, Power, Users } from "lucide-react";
+import { Plus, Edit01, Power01, Users01 } from "@untitledui/icons";
 
 interface Area {
   id: string;
@@ -51,9 +51,8 @@ export default function AreasListPage() {
             Manage work areas and teams in the system.
           </p>
         </div>
-        <Link href={"/admin/areas/new" as any} className={buttonVariants()}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Area
+        <Link href={"/admin/areas/new" as any}>
+          <Button iconLeading={Plus}>New Area</Button>
         </Link>
       </div>
 
@@ -95,10 +94,10 @@ export default function AreasListPage() {
                     <td className="p-4 text-muted-foreground">{area.slug}</td>
                     <td className="p-4 text-muted-foreground max-w-xs truncate">{area.description || "-"}</td>
                     <td className="p-4">
-                      <Badge variant="outline">{area._count.members}</Badge>
+                      <Badge color="gray" type="pill-color" size="sm">{area._count.members}</Badge>
                     </td>
                     <td className="p-4">
-                      <Badge variant={area.isActive ? "default" : "secondary"}>
+                      <Badge color={area.isActive ? "success" : "gray"} type="pill-color" size="sm">
                         {area.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </td>
@@ -106,25 +105,23 @@ export default function AreasListPage() {
                       <div className="flex justify-end gap-2">
                         <Link 
                           href={`/admin/areas/${area.id}/members` as any}
-                          className={buttonVariants({ variant: "ghost", size: "icon" })}
                           title="Manage Members"
                         >
-                          <Users className="h-4 w-4" />
+                          <Button color="tertiary" size="sm" iconLeading={Users01} />
                         </Link>
                         <Button 
-                          variant="ghost" 
-                          size="icon"
+                          color="tertiary" 
+                          size="sm"
+                          iconLeading={Power01}
                           onClick={() => handleToggleActive(area.id)}
-                          disabled={toggleActiveMutation.isPending}
+                          isDisabled={toggleActiveMutation.isPending}
                           title={area.isActive ? "Deactivate" : "Activate"}
-                        >
-                          <Power className={`h-4 w-4 ${area.isActive ? "text-green-600" : "text-muted-foreground"}`} />
-                        </Button>
+                          className={area.isActive ? "text-green-600" : "text-muted-foreground"}
+                        />
                         <Link 
                           href={`/admin/areas/${area.id}/edit` as any}
-                          className={buttonVariants({ variant: "ghost", size: "icon" })}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Button color="tertiary" size="sm" iconLeading={Edit01} />
                         </Link>
                       </div>
                     </td>

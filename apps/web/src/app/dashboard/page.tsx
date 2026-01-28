@@ -4,10 +4,11 @@ import { useState } from "react";
 import type { ComponentProps } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/base/buttons/button";
 import { RequestCard } from "@/components/request-card";
 import { RequestFilters } from "@/components/request-filters";
 import { trpc } from "@/utils/trpc";
+import { Plus } from "@untitledui/icons";
 
 interface RequestListResponse {
   items: Array<{
@@ -46,9 +47,11 @@ export default function DashboardPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Requests</h1>
-        <Link href={"/requests/new" as any} className={buttonVariants()}>
-          Novo Request
+        <h1 className="text-3xl font-bold text-primary">Requests</h1>
+        <Link href="/requests/new">
+          <Button iconLeading={Plus}>
+            Novo Request
+          </Button>
         </Link>
       </div>
       
@@ -78,19 +81,19 @@ export default function DashboardPage() {
       {data && data.total > limit && (
         <div className="flex justify-center gap-4 items-center">
           <Button
-            variant="outline"
+            color="secondary"
             onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
+            isDisabled={page === 1}
           >
             Anterior
           </Button>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-tertiary">
             Página {page} de {Math.ceil(data.total / limit)}
           </span>
           <Button
-            variant="outline"
+            color="secondary"
             onClick={() => setPage(p => p + 1)}
-            disabled={!data.hasMore}
+            isDisabled={!data.hasMore}
           >
             Próximo
           </Button>

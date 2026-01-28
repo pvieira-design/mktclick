@@ -4,18 +4,12 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { Select } from "@/components/base/select/select";
+import { Badge } from "@/components/base/badges/badges";
 import {
   Card,
   CardContent,
@@ -40,12 +34,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Edit, Trash2, ChevronUp, ChevronDown, Flag } from "lucide-react";
+import { ArrowLeft, Plus, Edit01, Trash01, ChevronUp, ChevronDown, Flag01 } from "@untitledui/icons";
 import Link from "next/link";
 
 interface WorkflowStep {
@@ -102,6 +94,7 @@ export default function ContentTypeWorkflowPage() {
 
   const [isStepDialogOpen, setIsStepDialogOpen] = useState(false);
   const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
+  const [stepToDelete, setStepToDelete] = useState<WorkflowStep | null>(null);
   const [stepForm, setStepForm] = useState<StepFormData>(initialStepForm);
 
   const { data: contentType, isLoading: isContentTypeLoading } = useQuery(
@@ -147,6 +140,7 @@ export default function ContentTypeWorkflowPage() {
     onSuccess: () => {
       toast.success("Step deleted");
       queryClient.invalidateQueries({ queryKey: [["workflow", "getStepsByContentType"]] });
+      setStepToDelete(null);
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -223,8 +217,10 @@ export default function ContentTypeWorkflowPage() {
     }
   };
 
-  const handleDeleteStep = (stepId: string) => {
-    (deleteStepMutation.mutate as any)({ id: stepId });
+  const handleDeleteStep = () => {
+    if (stepToDelete) {
+      (deleteStepMutation.mutate as any)({ id: stepToDelete.id });
+    }
   };
 
   const moveStep = (index: number, direction: "up" | "down") => {
@@ -280,9 +276,8 @@ export default function ContentTypeWorkflowPage() {
       <div className="flex items-center gap-4">
         <Link
           href={`/admin/content-types/${contentTypeId}/edit` as any}
-          className={buttonVariants({ variant: "ghost", size: "icon" })}
         >
-          <ArrowLeft className="h-4 w-4" />
+          <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
         </Link>
         <div className="flex-1">
           {isContentTypeLoading ? (
@@ -313,9 +308,9 @@ export default function ContentTypeWorkflowPage() {
               <div key={area.id} className="flex items-center justify-between p-3 rounded-md border">
                 <span className="font-medium">{area.name}</span>
                 <Checkbox
-                  checked={getAreaPermission(area.id)}
-                  onCheckedChange={() => handlePermissionToggle(area.id, getAreaPermission(area.id))}
-                  disabled={setPermissionMutation.isPending}
+                  isSelected={getAreaPermission(area.id)}
+                  onChange={() => handlePermissionToggle(area.id, getAreaPermission(area.id))}
+                  isDisabled={setPermissionMutation.isPending}
                 />
               </div>
             ))}
@@ -334,8 +329,7 @@ export default function ContentTypeWorkflowPage() {
               Define the approval flow for this content type.
             </CardDescription>
           </div>
-          <Button onClick={openCreateStepDialog}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button onClick={openCreateStepDialog} iconLeading={Plus}>
             Add Step
           </Button>
         </CardHeader>
@@ -350,36 +344,32 @@ export default function ContentTypeWorkflowPage() {
             <div className="space-y-2">
               {steps.map((step: WorkflowStep, index: number) => (
                 <div key={step.id} className="flex items-start gap-4 p-4 rounded-md border bg-card">
-                  <div className="flex flex-col">
+                  <div className="flex flex-col gap-1">
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
+                      color="tertiary"
+                      size="sm"
                       onClick={() => moveStep(index, "up")}
-                      disabled={index === 0 || reorderStepsMutation.isPending}
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </Button>
+                      isDisabled={index === 0 || reorderStepsMutation.isPending}
+                      iconLeading={ChevronUp}
+                    />
                     <span className="text-center text-sm font-bold text-muted-foreground">
                       {index + 1}
                     </span>
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
+                      color="tertiary"
+                      size="sm"
                       onClick={() => moveStep(index, "down")}
-                      disabled={index === steps.length - 1 || reorderStepsMutation.isPending}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
+                      isDisabled={index === steps.length - 1 || reorderStepsMutation.isPending}
+                      iconLeading={ChevronDown}
+                    />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium">{step.name}</span>
                       {step.isFinalStep && (
-                        <Badge variant="default" className="text-xs">
-                          <Flag className="mr-1 h-3 w-3" />
+                        <Badge color="success" size="sm">
+                          <Flag01 className="mr-1 h-3 w-3" />
                           Final
                         </Badge>
                       )}
@@ -406,29 +396,18 @@ export default function ContentTypeWorkflowPage() {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEditStepDialog(step)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger className={buttonVariants({ variant: "ghost", size: "icon" })}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete step?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will remove "{step.name}" from the workflow.
-                            If requests are currently on this step, deletion will fail.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteStep(step.id)}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Button 
+                      color="tertiary" 
+                      size="sm" 
+                      onClick={() => openEditStepDialog(step)}
+                      iconLeading={Edit01}
+                    />
+                    <Button 
+                      color="tertiary" 
+                      size="sm" 
+                      onClick={() => setStepToDelete(step)}
+                      iconLeading={Trash01}
+                    />
                   </div>
                 </div>
               ))}
@@ -453,60 +432,52 @@ export default function ContentTypeWorkflowPage() {
 
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="stepName">Step Name</Label>
                 <Input
-                  id="stepName"
+                  label="Step Name"
                   value={stepForm.name}
-                  onChange={(e) => setStepForm({ ...stepForm, name: e.target.value })}
+                  onChange={(value) => setStepForm({ ...stepForm, name: value })}
                   placeholder="e.g. Design Review"
-                  required
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="stepDescription">Description</Label>
-                <Textarea
-                  id="stepDescription"
+                <TextArea
+                  label="Description"
                   value={stepForm.description}
-                  onChange={(e) => setStepForm({ ...stepForm, description: e.target.value })}
+                  onChange={(value) => setStepForm({ ...stepForm, description: value })}
                   placeholder="What happens in this step..."
                   rows={2}
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label>Approver Area</Label>
                 <Select
-                  value={stepForm.approverAreaId}
-                  onValueChange={(value) => setStepForm({ ...stepForm, approverAreaId: value || "" })}
+                  label="Approver Area"
+                  selectedKey={stepForm.approverAreaId}
+                  onSelectionChange={(key) => setStepForm({ ...stepForm, approverAreaId: key as string })}
+                  placeholder="Select area (optional)"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select area (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">No specific area</SelectItem>
-                    {areas.map((area: Area) => (
-                      <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <Select.Item id="" label="No specific area" />
+                  {areas.map((area: Area) => (
+                    <Select.Item key={area.id} id={area.id} label={area.name} />
+                  ))}
                 </Select>
               </div>
 
               {stepForm.approverAreaId && (
                 <div className="grid gap-2">
-                  <Label>Approver Positions</Label>
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Approver Positions
+                  </label>
                   <div className="flex gap-4">
                     {["HEAD", "COORDINATOR", "STAFF"].map((pos) => (
-                      <div key={pos} className="flex items-center gap-2">
-                        <Checkbox
-                          id={`pos-${pos}`}
-                          checked={stepForm.approverPositions.includes(pos)}
-                          onCheckedChange={() => togglePosition(pos)}
-                        />
-                        <Label htmlFor={`pos-${pos}`} className="cursor-pointer text-sm">
-                          {pos}
-                        </Label>
-                      </div>
+                      <Checkbox
+                        key={pos}
+                        isSelected={stepForm.approverPositions.includes(pos)}
+                        onChange={() => togglePosition(pos)}
+                      >
+                        {pos}
+                      </Checkbox>
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -517,19 +488,18 @@ export default function ContentTypeWorkflowPage() {
 
               {fields.length > 0 && (
                 <div className="grid gap-2">
-                  <Label>Required Fields to Enter Step</Label>
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Required Fields to Enter Step
+                  </label>
                   <div className="border rounded-md p-3 space-y-2 max-h-32 overflow-y-auto">
                     {fields.map((field: Field) => (
-                      <div key={field.id} className="flex items-center gap-2">
-                        <Checkbox
-                          id={`enter-${field.id}`}
-                          checked={stepForm.requiredFieldsToEnter.includes(field.name)}
-                          onCheckedChange={() => toggleFieldInList(field.name, "enter")}
-                        />
-                        <Label htmlFor={`enter-${field.id}`} className="cursor-pointer text-sm">
-                          {field.label}
-                        </Label>
-                      </div>
+                      <Checkbox
+                        key={field.id}
+                        isSelected={stepForm.requiredFieldsToEnter.includes(field.name)}
+                        onChange={() => toggleFieldInList(field.name, "enter")}
+                      >
+                        {field.label}
+                      </Checkbox>
                     ))}
                   </div>
                 </div>
@@ -537,19 +507,18 @@ export default function ContentTypeWorkflowPage() {
 
               {fields.length > 0 && (
                 <div className="grid gap-2">
-                  <Label>Required Fields to Exit Step</Label>
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Required Fields to Exit Step
+                  </label>
                   <div className="border rounded-md p-3 space-y-2 max-h-32 overflow-y-auto">
                     {fields.map((field: Field) => (
-                      <div key={field.id} className="flex items-center gap-2">
-                        <Checkbox
-                          id={`exit-${field.id}`}
-                          checked={stepForm.requiredFieldsToExit.includes(field.name)}
-                          onCheckedChange={() => toggleFieldInList(field.name, "exit")}
-                        />
-                        <Label htmlFor={`exit-${field.id}`} className="cursor-pointer text-sm">
-                          {field.label}
-                        </Label>
-                      </div>
+                      <Checkbox
+                        key={field.id}
+                        isSelected={stepForm.requiredFieldsToExit.includes(field.name)}
+                        onChange={() => toggleFieldInList(field.name, "exit")}
+                      >
+                        {field.label}
+                      </Checkbox>
                     ))}
                   </div>
                 </div>
@@ -557,25 +526,23 @@ export default function ContentTypeWorkflowPage() {
 
               <div className="flex items-center gap-2">
                 <Checkbox
-                  id="isFinalStep"
-                  checked={stepForm.isFinalStep}
-                  onCheckedChange={(checked) => 
+                  isSelected={stepForm.isFinalStep}
+                  onChange={(checked) => 
                     setStepForm({ ...stepForm, isFinalStep: checked === true })
                   }
-                />
-                <Label htmlFor="isFinalStep" className="cursor-pointer">
+                >
                   This is the final step (marks request as complete)
-                </Label>
+                </Checkbox>
               </div>
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={closeStepDialog}>
+              <Button type="button" color="secondary" onClick={closeStepDialog}>
                 Cancel
               </Button>
               <Button 
                 type="submit" 
-                disabled={createStepMutation.isPending || updateStepMutation.isPending}
+                isDisabled={createStepMutation.isPending || updateStepMutation.isPending}
               >
                 {(createStepMutation.isPending || updateStepMutation.isPending) 
                   ? "Saving..." 
@@ -585,6 +552,24 @@ export default function ContentTypeWorkflowPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!stepToDelete} onOpenChange={(open) => !open && setStepToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete step?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove "{stepToDelete?.name}" from the workflow.
+              If requests are currently on this step, deletion will fail.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteStep}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
