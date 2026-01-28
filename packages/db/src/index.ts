@@ -18,6 +18,7 @@ export {
   UserRole,
   AreaPosition,
   FieldType,
+  CreatorType,
 } from "../prisma/generated/enums";
 
 // Re-export types
@@ -33,4 +34,5 @@ export type {
   RequestFieldValue,
   WorkflowStep,
   ContentTypeAreaPermission,
+  Creator,
 } from "../prisma/generated/client";
