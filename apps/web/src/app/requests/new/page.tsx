@@ -4,22 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { DynamicFieldRenderer } from "@/components/request/dynamic-field-renderer";
+import { CreatorParticipationSection, type CreatorParticipation } from "@/components/request/creator-participation-section";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { TextArea } from "@/components/base/textarea/textarea";
+import { Select } from "@/components/base/select/select";
+import { Input as ShadcnInput } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/utils/trpc";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@untitledui/icons";
 import { useContentTypes, useOrigins } from "@/hooks/use-metadata";
 
 type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -50,6 +45,13 @@ interface CreateRequestPayload {
   deadline?: Date;
   patologia?: Patologia;
   fieldValues?: Record<string, any>;
+  creatorParticipations?: Array<{
+    creatorId: string;
+    participationDate: Date;
+    location?: string;
+    valuePaid: number;
+    notes?: string;
+  }>;
 }
 
 export default function NewRequestPage() {
@@ -77,6 +79,8 @@ export default function NewRequestPage() {
   });
 
   const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+
+  const [creatorParticipations, setCreatorParticipations] = useState<CreatorParticipation[]>([]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -127,6 +131,8 @@ export default function NewRequestPage() {
     
     if (!validate()) return;
 
+    const validParticipations = creatorParticipations.filter(p => p.creatorId);
+
     const payload: CreateRequestPayload = {
       title: formData.title,
       description: formData.description,
@@ -136,6 +142,7 @@ export default function NewRequestPage() {
       deadline: formData.deadline ? new Date(formData.deadline) : undefined,
       patologia: formData.patologia ? formData.patologia as Patologia : undefined,
       fieldValues: Object.keys(fieldValues).length > 0 ? fieldValues : undefined,
+      creatorParticipations: validParticipations.length > 0 ? validParticipations : undefined,
     };
 
     createMutation.mutate(payload as any);
@@ -144,12 +151,10 @@ export default function NewRequestPage() {
   return (
     <div className="container mx-auto p-6 max-w-3xl">
       <div className="mb-6">
-        <Link 
-          href="/dashboard" 
-          className={buttonVariants({ variant: "ghost", size: "sm" })}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
+        <Link href="/dashboard">
+          <Button color="tertiary" size="sm" iconLeading={ArrowLeft}>
+            Voltar
+          </Button>
         </Link>
       </div>
 
@@ -159,103 +164,80 @@ export default function NewRequestPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título *</Label>
+            <div>
               <Input
-                id="title"
+                label="Título *"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, title: value })}
                 placeholder="Digite o título do request"
-                className={errors.title ? "border-destructive" : ""}
+                isInvalid={!!errors.title}
+                hint={errors.title}
               />
-              {errors.title && (
-                <p className="text-sm text-destructive">{errors.title}</p>
-              )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição *</Label>
-              <Textarea
-                id="description"
+            <div>
+              <TextArea
+                label="Descrição *"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, description: value })}
                 placeholder="Descreva o request em detalhes (mínimo 10 caracteres)"
-                className={`min-h-32 ${errors.description ? "border-destructive" : ""}`}
+                rows={5}
+                isInvalid={!!errors.description}
+                hint={errors.description || `${formData.description.length}/5000 caracteres`}
               />
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {formData.description.length}/5000 caracteres
-              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Tipo de Conteúdo *</Label>
+              <div>
                 <Select
-                  value={formData.contentTypeId}
-                  onValueChange={(value) => setFormData({ ...formData, contentTypeId: value || "" })}
-                  disabled={loadingContentTypes}
+                  label="Tipo de Conteúdo *"
+                  selectedKey={formData.contentTypeId}
+                  onSelectionChange={(key) => setFormData({ ...formData, contentTypeId: key as string || "" })}
+                  isDisabled={loadingContentTypes}
+                  placeholder={loadingContentTypes ? "Carregando..." : "Selecione o tipo"}
+                  isInvalid={!!errors.contentTypeId}
+                  hint={errors.contentTypeId}
                 >
-                  <SelectTrigger className={errors.contentTypeId ? "border-destructive" : ""}>
-                    <SelectValue placeholder={loadingContentTypes ? "Carregando..." : "Selecione o tipo"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contentTypes?.map((ct) => (
-                      <SelectItem key={ct.id} value={ct.id}>{ct.name}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  {contentTypes?.map((ct) => (
+                    <Select.Item key={ct.id} id={ct.id} label={ct.name} />
+                  ))}
                 </Select>
-                {errors.contentTypeId && (
-                  <p className="text-sm text-destructive">{errors.contentTypeId}</p>
-                )}
               </div>
 
-              <div className="space-y-2">
-                <Label>Origem *</Label>
+              <div>
                 <Select
-                  value={formData.originId}
-                  onValueChange={(value) => setFormData({ ...formData, originId: value || "" })}
-                  disabled={loadingOrigins}
+                  label="Origem *"
+                  selectedKey={formData.originId}
+                  onSelectionChange={(key) => setFormData({ ...formData, originId: key as string || "" })}
+                  isDisabled={loadingOrigins}
+                  placeholder={loadingOrigins ? "Carregando..." : "Selecione a origem"}
+                  isInvalid={!!errors.originId}
+                  hint={errors.originId}
                 >
-                  <SelectTrigger className={errors.originId ? "border-destructive" : ""}>
-                    <SelectValue placeholder={loadingOrigins ? "Carregando..." : "Selecione a origem"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {origins?.map((origin) => (
-                      <SelectItem key={origin.id} value={origin.id}>{origin.name}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  {origins?.map((origin) => (
+                    <Select.Item key={origin.id} id={origin.id} label={origin.name} />
+                  ))}
                 </Select>
-                {errors.originId && (
-                  <p className="text-sm text-destructive">{errors.originId}</p>
-                )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Prioridade</Label>
+              <div>
                 <Select
-                  value={formData.priority}
-                  onValueChange={(value) => setFormData({ ...formData, priority: value as Priority })}
+                  label="Prioridade"
+                  selectedKey={formData.priority}
+                  onSelectionChange={(key) => setFormData({ ...formData, priority: key as Priority })}
+                  placeholder="Selecione a prioridade"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a prioridade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.entries(priorityLabels) as [Priority, string][]).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  {(Object.entries(priorityLabels) as [Priority, string][]).map(([value, label]) => (
+                    <Select.Item key={value} id={value} label={label} />
+                  ))}
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="deadline">Prazo (opcional)</Label>
-                <Input
-                  id="deadline"
+              <div>
+                <label className="text-sm font-medium text-secondary mb-1.5 block">Prazo (opcional)</label>
+                <ShadcnInput
                   type="date"
                   value={formData.deadline}
                   onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
@@ -263,21 +245,17 @@ export default function NewRequestPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Patologia (opcional)</Label>
+            <div>
               <Select
-                value={formData.patologia}
-                onValueChange={(value) => setFormData({ ...formData, patologia: value as Patologia })}
+                label="Patologia (opcional)"
+                selectedKey={formData.patologia}
+                onSelectionChange={(key) => setFormData({ ...formData, patologia: key as Patologia })}
+                placeholder="Selecione a patologia"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a patologia" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Nenhuma</SelectItem>
-                  {(Object.entries(patologiaLabels) as [Patologia, string][]).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
+                <Select.Item id="" label="Nenhuma" />
+                {(Object.entries(patologiaLabels) as [Patologia, string][]).map(([value, label]) => (
+                  <Select.Item key={value} id={value} label={label} />
+                ))}
               </Select>
             </div>
 
@@ -303,19 +281,28 @@ export default function NewRequestPage() {
               </div>
             )}
 
+            <div className="space-y-6 pt-4 border-t">
+              <CreatorParticipationSection
+                participations={creatorParticipations}
+                onChange={setCreatorParticipations}
+                disabled={createMutation.isPending}
+              />
+            </div>
+
             <div className="flex justify-end gap-4 pt-4">
               <Button
                 type="button"
-                variant="outline"
+                color="secondary"
                 onClick={() => router.push("/dashboard")}
               >
                 Cancelar
               </Button>
               <Button 
                 type="submit" 
-                disabled={createMutation.isPending}
+                isDisabled={createMutation.isPending}
+                isLoading={createMutation.isPending}
               >
-                {createMutation.isPending ? "Criando..." : "Criar Request"}
+                Criar Request
               </Button>
             </div>
           </form>

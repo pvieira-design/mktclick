@@ -32,6 +32,14 @@ const getByIdInputSchema = z.object({
   id: z.string().cuid(),
 });
 
+const creatorParticipationSchema = z.object({
+  creatorId: z.string().cuid(),
+  participationDate: z.coerce.date(),
+  location: z.string().optional(),
+  valuePaid: z.number().min(0),
+  notes: z.string().optional(),
+});
+
 const createInputSchema = z.object({
   title: z.string().min(3).max(200),
   description: z.string().min(10).max(5000),
@@ -41,6 +49,7 @@ const createInputSchema = z.object({
   deadline: z.coerce.date().optional(),
   patologia: z.nativeEnum(Patologia).optional(),
   fieldValues: z.record(z.string(), z.any()).optional(),
+  creatorParticipations: z.array(creatorParticipationSchema).optional(),
 });
 
 const updateInputSchema = z.object({
@@ -53,6 +62,22 @@ const updateInputSchema = z.object({
   deadline: z.coerce.date().optional(),
   patologia: z.nativeEnum(Patologia).optional(),
   fieldValues: z.record(z.string(), z.any()).optional(),
+  creatorParticipations: z.array(creatorParticipationSchema.extend({
+    id: z.string().cuid().optional(),
+  })).optional(),
+});
+
+const addParticipationInputSchema = z.object({
+  requestId: z.string().cuid(),
+  creatorId: z.string().cuid(),
+  participationDate: z.coerce.date(),
+  location: z.string().optional(),
+  valuePaid: z.number().min(0),
+  notes: z.string().optional(),
+});
+
+const removeParticipationInputSchema = z.object({
+  participationId: z.string().cuid(),
 });
 
 const submitInputSchema = z.object({
@@ -162,6 +187,19 @@ export const requestRouter = router({
             include: { changedBy: true },
             orderBy: { createdAt: "desc" },
           },
+          creatorParticipations: {
+            include: {
+              creator: {
+                select: {
+                  id: true,
+                  name: true,
+                  imageUrl: true,
+                  type: true,
+                },
+              },
+            },
+            orderBy: { participationDate: "asc" },
+          },
         },
       });
 
@@ -243,6 +281,21 @@ export const requestRouter = router({
           }
         }
 
+        if (input.creatorParticipations && input.creatorParticipations.length > 0) {
+          for (const participation of input.creatorParticipations) {
+            await tx.creatorParticipation.create({
+              data: {
+                requestId: request.id,
+                creatorId: participation.creatorId,
+                participationDate: participation.participationDate,
+                location: participation.location,
+                valuePaid: participation.valuePaid,
+                notes: participation.notes,
+              },
+            });
+          }
+        }
+
         return request;
       });
     }),
@@ -251,7 +304,7 @@ export const requestRouter = router({
     .input(updateInputSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-      const { id, fieldValues, ...updateData } = input;
+      const { id, fieldValues, creatorParticipations, ...updateData } = input;
 
       return db.$transaction(async (tx) => {
         const existing = await tx.request.findUnique({ where: { id } });
@@ -317,6 +370,23 @@ export const requestRouter = router({
                 update: { value },
               });
             }
+          }
+        }
+
+        if (creatorParticipations !== undefined) {
+          await tx.creatorParticipation.deleteMany({ where: { requestId: id } });
+          
+          for (const participation of creatorParticipations) {
+            await tx.creatorParticipation.create({
+              data: {
+                requestId: id,
+                creatorId: participation.creatorId,
+                participationDate: participation.participationDate,
+                location: participation.location,
+                valuePaid: participation.valuePaid,
+                notes: participation.notes,
+              },
+            });
           }
         }
 
@@ -890,5 +960,51 @@ export const requestRouter = router({
           status: RequestStatus.PENDING,
         },
       });
+    }),
+
+  addParticipation: protectedProcedure
+    .input(addParticipationInputSchema)
+    .mutation(async ({ input }) => {
+      const request = await db.request.findUnique({
+        where: { id: input.requestId },
+      });
+
+      if (!request) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+      }
+
+      return db.creatorParticipation.create({
+        data: {
+          requestId: input.requestId,
+          creatorId: input.creatorId,
+          participationDate: input.participationDate,
+          location: input.location,
+          valuePaid: input.valuePaid,
+          notes: input.notes,
+        },
+        include: {
+          creator: {
+            select: { id: true, name: true, imageUrl: true, type: true },
+          },
+        },
+      });
+    }),
+
+  removeParticipation: protectedProcedure
+    .input(removeParticipationInputSchema)
+    .mutation(async ({ input }) => {
+      const participation = await db.creatorParticipation.findUnique({
+        where: { id: input.participationId },
+      });
+
+      if (!participation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Participation not found" });
+      }
+
+      await db.creatorParticipation.delete({
+        where: { id: input.participationId },
+      });
+
+      return { success: true };
     }),
 });
