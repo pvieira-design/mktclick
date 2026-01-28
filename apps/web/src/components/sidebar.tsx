@@ -1,6 +1,7 @@
 "use client";
 
 import { ClipboardList, Settings } from "lucide-react";
+import { Users01 } from "@untitledui/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -10,6 +11,7 @@ import { Button } from "./ui/button";
 
 const navigation = [
   { name: "Requests", href: "/dashboard", icon: ClipboardList },
+  { name: "Criadores", href: "/criadores", icon: Users01 },
 ] as const;
 
 interface SidebarProps {
