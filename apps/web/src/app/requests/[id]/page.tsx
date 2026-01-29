@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { WorkflowActions, WorkflowProgress } from "@/components/request/workflow-actions";
+import { RequestFilesSection } from "@/components/request/request-files-section";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Button } from "@/components/base/buttons/button";
 import { buttonVariants } from "@/components/ui/button";
@@ -87,6 +88,17 @@ interface RequestData {
     action: string;
     createdAt: string;
     changedBy: { name: string | null; email: string };
+  }>;
+  files: Array<{
+    file: {
+      id: string;
+      name: string;
+      url: string;
+      mimeType: string;
+      size: number;
+      isArchived: boolean;
+      tags: Array<{ tag: { id: string; name: string } }>;
+    };
   }>;
   currentStep: {
     id: string;
@@ -390,6 +402,17 @@ export default function RequestDetailsPage() {
                 {request.description}
               </div>
             </div>
+
+            {request.files && request.files.length > 0 && (
+              <>
+                <Separator />
+                <RequestFilesSection
+                  requestId={request.id}
+                  files={request.files}
+                  canEdit={request.status === "DRAFT" && currentUser?.id === request.createdBy.id}
+                />
+              </>
+            )}
 
             {request.rejectionReason && (
               <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg">
