@@ -1,13 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { Select } from "@/components/base/select/select";
 import { Badge } from "@/components/base/badges/badges";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FileUpload } from "@/components/application/file-upload/file-upload-base";
+import { useFileUpload } from "@/hooks/use-file-upload";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { 
   Plus, 
   SearchMd, 
@@ -70,15 +79,58 @@ function getFileTypeLabel(mimeType: string): string {
 }
 
 export default function LibraryPage() {
+  const queryClient = useQueryClient();
+  const { uploadFileWithMetadata } = useFileUpload();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
   const [archivedFilter, setArchivedFilter] = useState<string>("active");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(1);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<Map<string, { progress: number; file: File }>>(new Map());
   const limit = 20;
 
   const { data: tagsData } = useQuery(trpc.fileTag.list.queryOptions());
+
+  const handleFilesDropped = async (files: FileList) => {
+    const fileArray = Array.from(files);
+    
+    for (const file of fileArray) {
+      const tempId = `temp-${Date.now()}-${file.name}`;
+      
+      setUploadingFiles((prev) => new Map(prev).set(tempId, { progress: 0, file }));
+      
+      try {
+        await uploadFileWithMetadata(file, (progress: number) => {
+          setUploadingFiles((prev) => {
+            const newMap = new Map(prev);
+            const item = newMap.get(tempId);
+            if (item) {
+              newMap.set(tempId, { ...item, progress });
+            }
+            return newMap;
+          });
+        });
+        
+        setUploadingFiles((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(tempId);
+          return newMap;
+        });
+        
+        queryClient.invalidateQueries({ queryKey: [["file"]] });
+        toast.success(`${file.name} enviado com sucesso!`);
+      } catch {
+        toast.error(`Erro ao fazer upload de ${file.name}`);
+        setUploadingFiles((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(tempId);
+          return newMap;
+        });
+      }
+    }
+  };
 
   const { data, isLoading } = useQuery(
     trpc.file.list.queryOptions({
@@ -200,7 +252,7 @@ export default function LibraryPage() {
             Gerencie arquivos e referências visuais.
           </p>
         </div>
-        <Button iconLeading={Plus}>
+        <Button iconLeading={Plus} onClick={() => setIsUploadOpen(true)}>
           Upload
         </Button>
       </div>
@@ -341,6 +393,51 @@ export default function LibraryPage() {
           </div>
         </div>
       )}
+
+      <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Upload de Arquivos</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <FileUpload.Root>
+              <FileUpload.DropZone
+                hint="PNG, JPG, PDF, MP4 (máx. 50MB)"
+                accept="image/*,video/*,audio/*,application/pdf"
+                maxSize={50 * 1024 * 1024}
+                onDropFiles={handleFilesDropped}
+                onSizeLimitExceed={() => toast.error("Arquivo muito grande. Máximo: 50MB")}
+              />
+
+              {uploadingFiles.size > 0 && (
+                <FileUpload.List>
+                  {Array.from(uploadingFiles.entries()).map(([tempId, { progress, file }]) => (
+                    <FileUpload.ListItemProgressBar
+                      key={tempId}
+                      name={file.name}
+                      size={file.size}
+                      progress={progress}
+                      onDelete={() => {
+                        setUploadingFiles((prev) => {
+                          const newMap = new Map(prev);
+                          newMap.delete(tempId);
+                          return newMap;
+                        });
+                      }}
+                    />
+                  ))}
+                </FileUpload.List>
+              )}
+            </FileUpload.Root>
+
+            <div className="flex justify-end">
+              <Button color="secondary" onClick={() => setIsUploadOpen(false)}>
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
