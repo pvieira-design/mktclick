@@ -11,6 +11,7 @@ import db, {
 import { protectedProcedure, router } from "../index";
 import {
   canUserApprove,
+  canUserCreateRequestOfType,
   validateRequiredFields,
   getNextStep,
   getPreviousSteps,
@@ -50,6 +51,7 @@ const createInputSchema = z.object({
   patologia: z.nativeEnum(Patologia).optional(),
   fieldValues: z.record(z.string(), z.any()).optional(),
   creatorParticipations: z.array(creatorParticipationSchema).optional(),
+  fileIds: z.array(z.string().cuid()).optional(),
 });
 
 const updateInputSchema = z.object({
@@ -200,6 +202,18 @@ export const requestRouter = router({
             },
             orderBy: { participationDate: "asc" },
           },
+          files: {
+            include: {
+              file: {
+                include: {
+                  tags: {
+                    include: { tag: true },
+                  },
+                },
+              },
+            },
+            orderBy: { createdAt: "asc" },
+          },
         },
       });
 
@@ -224,6 +238,15 @@ export const requestRouter = router({
     .input(createInputSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+
+      // Validate user has permission to create this content type
+      const canCreate = await canUserCreateRequestOfType(userId, input.contentTypeId);
+      if (!canCreate) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to create requests of this content type",
+        });
+      }
 
       return db.$transaction(async (tx) => {
          const request = await tx.request.create({
@@ -291,6 +314,17 @@ export const requestRouter = router({
                 location: participation.location,
                 valuePaid: participation.valuePaid,
                 notes: participation.notes,
+              },
+            });
+          }
+        }
+
+        if (input.fileIds && input.fileIds.length > 0) {
+          for (const fileId of input.fileIds) {
+            await tx.requestFile.create({
+              data: {
+                requestId: request.id,
+                fileId,
               },
             });
           }
