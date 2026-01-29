@@ -1,18 +1,23 @@
 "use client";
 
-import { ClipboardList, Settings } from "lucide-react";
-import { Users01 } from "@untitledui/icons";
+import {
+  ClipboardCheck,
+  File02,
+  FolderClosed,
+  Globe02,
+  Grid01,
+  Tag01,
+  Users01,
+} from "@untitledui/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { cn } from "@/lib/utils";
-import { Button } from "./ui/button";
-
-const navigation = [
-  { name: "Requests", href: "/dashboard", icon: ClipboardList },
-  { name: "Criadores", href: "/criadores", icon: Users01 },
-] as const;
+import {
+  NavListSections,
+  type NavSection,
+} from "@/components/application/app-navigation/base-components/nav-list-sections";
+import { ClickLogo } from "@/components/foundations/logo/click-logo";
 
 interface SidebarProps {
   children?: ReactNode;
@@ -21,52 +26,60 @@ interface SidebarProps {
 
 export function Sidebar({ children, userRole }: SidebarProps) {
   const pathname = usePathname();
-  const isAdmin = userRole === "SUPER_ADMIN";
+  const isAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
+
+  const getActiveUrl = () => {
+    if (pathname.startsWith("/admin/content-types")) return "/admin/content-types";
+    if (pathname.startsWith("/admin/origins")) return "/admin/origins";
+    if (pathname.startsWith("/admin/areas")) return "/admin/areas";
+    if (pathname.startsWith("/admin/users")) return "/admin/users";
+    if (pathname.startsWith("/admin/tags")) return "/admin/tags";
+    if (pathname.startsWith("/criadores")) return "/criadores";
+    if (pathname.startsWith("/library")) return "/library";
+    return "/dashboard";
+  };
+
+  const activeUrl = getActiveUrl();
+
+  const sections: NavSection[] = [
+    {
+      label: "General",
+      items: [
+        { label: "Requests", href: "/dashboard", icon: ClipboardCheck },
+        { label: "Criadores", href: "/criadores", icon: Users01 },
+        { label: "Biblioteca", href: "/library", icon: FolderClosed },
+      ],
+    },
+  ];
+
+  if (isAdmin) {
+    sections.push({
+      label: "Admin",
+      items: [
+        { label: "Content Types", href: "/admin/content-types", icon: File02 },
+        { label: "Origins", href: "/admin/origins", icon: Globe02 },
+        { label: "Areas", href: "/admin/areas", icon: Grid01 },
+        { label: "Users", href: "/admin/users", icon: Users01 },
+        { label: "Tags", href: "/admin/tags", icon: Tag01 },
+      ],
+    });
+  }
 
   return (
-    <aside className="flex h-full w-60 flex-col border-r bg-card">
-      <div className="flex h-14 items-center border-b px-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="text-lg font-semibold">MKT Click</span>
+    <aside className="flex h-full w-60 flex-col border-r border-secondary bg-primary">
+      <div className="flex h-16 items-center border-b border-secondary px-4 lg:px-6">
+        <Link href="/dashboard">
+          <ClickLogo />
         </Link>
       </div>
 
-      <nav className="flex-1 space-y-1 p-2">
-        {navigation.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link key={item.name} href={item.href}>
-              <Button
-                variant={isActive ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start gap-2",
-                  isActive && "bg-muted"
-                )}
-              >
-                <item.icon className="size-4" />
-                {item.name}
-              </Button>
-            </Link>
-          );
-        })}
+      <div className="flex-1 overflow-y-auto">
+        <NavListSections sections={sections} activeUrl={activeUrl} />
+      </div>
 
-        {isAdmin && (
-          <Link href="/admin">
-            <Button
-              variant={pathname.startsWith("/admin") ? "secondary" : "ghost"}
-              className={cn(
-                "w-full justify-start gap-2",
-                pathname.startsWith("/admin") && "bg-muted"
-              )}
-            >
-              <Settings className="size-4" />
-              Admin Panel
-            </Button>
-          </Link>
-        )}
-      </nav>
-
-      {children}
+      {children && (
+        <div className="border-t border-secondary">{children}</div>
+      )}
     </aside>
   );
 }
