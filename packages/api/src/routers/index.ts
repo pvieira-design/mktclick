@@ -3,6 +3,7 @@ import { areaRouter } from "./area";
 import { contentTypeRouter } from "./content-type";
 import { contentTypeFieldRouter } from "./content-type-field";
 import { creatorRouter } from "./creator";
+import { fileRouter } from "./file";
 import { originRouter } from "./origin";
 import { requestRouter } from "./request";
 import { uploadRouter } from "./upload";
@@ -24,6 +25,7 @@ export const appRouter = router({
   contentType: contentTypeRouter,
   contentTypeField: contentTypeFieldRouter,
   creator: creatorRouter,
+  file: fileRouter,
   origin: originRouter,
   upload: uploadRouter,
   user: userRouter,
