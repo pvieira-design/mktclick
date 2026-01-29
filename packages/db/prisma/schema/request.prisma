@@ -65,6 +65,8 @@ model Request {
   history               RequestHistory[]
   fieldValues           RequestFieldValue[]
   creatorParticipations CreatorParticipation[]
+  comments              Comment[]
+  files                 RequestFile[]
 
   @@index([contentTypeId])
   @@index([originId])

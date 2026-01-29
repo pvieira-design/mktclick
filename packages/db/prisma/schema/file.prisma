@@ -1,0 +1,67 @@
+// File Library Models
+
+model File {
+  id           String   @id @default(cuid())
+  name         String
+  originalName String
+  description  String?  @db.Text
+  url          String
+  pathname     String   // Vercel Blob pathname
+  size         Int      // File size in bytes
+  mimeType     String
+  uploadedById String
+  isArchived   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  uploadedBy User            @relation("FileUploader", fields: [uploadedById], references: [id])
+  tags       FileTagOnFile[]
+  requests   RequestFile[]
+
+  @@index([uploadedById])
+  @@index([mimeType])
+  @@index([isArchived])
+  @@index([createdAt])
+  @@map("file")
+}
+
+model FileTag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  // Relations
+  files FileTagOnFile[]
+
+  @@map("file_tag")
+}
+
+model FileTagOnFile {
+  fileId String
+  tagId  String
+
+  // Relations
+  file File    @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  tag  FileTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([fileId, tagId])
+  @@index([fileId])
+  @@index([tagId])
+  @@map("file_tag_on_file")
+}
+
+model RequestFile {
+  requestId String
+  fileId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  request Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  file    File    @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@id([requestId, fileId])
+  @@index([requestId])
+  @@index([fileId])
+  @@map("request_file")
+}
