@@ -19,6 +19,7 @@ export {
   AreaPosition,
   FieldType,
   CreatorType,
+  TagGroup,
 } from "../prisma/generated/enums";
 
 // Re-export types
@@ -32,6 +33,7 @@ export type {
   AreaMember,
   ContentTypeField,
   RequestFieldValue,
+  FieldValueVersion,
   WorkflowStep,
   ContentTypeAreaPermission,
   Creator,

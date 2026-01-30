@@ -27,16 +27,19 @@ model ContentTypeField {
   helpText       String?
   defaultValue   String?
   isActive       Boolean     @default(true)
+  assignedStepId String?     // Optional: which workflow step this field is assigned to
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   
   // Relations
   contentType    ContentType @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+  assignedStep   WorkflowStep? @relation(fields: [assignedStepId], references: [id], onDelete: SetNull)
   fieldValues    RequestFieldValue[]
   
   // Constraints: field name must be unique per content type
   @@unique([contentTypeId, name])
   @@index([contentTypeId])
+  @@index([assignedStepId])
   @@map("content_type_field")
 }
 
@@ -52,10 +55,31 @@ model RequestFieldValue {
   // Relations
   request       Request           @relation(fields: [requestId], references: [id], onDelete: Cascade)
   field         ContentTypeField  @relation(fields: [fieldId], references: [id])
+  versions      FieldValueVersion[]
   
   // Constraints: one value per field per request
   @@unique([requestId, fieldId])
   @@index([requestId])
   @@index([fieldId])
   @@map("request_field_value")
+}
+
+// FieldValueVersion Model - Tracks version history of field value changes
+model FieldValueVersion {
+  id            String            @id @default(uuid())
+  fieldValueId  String
+  oldValue      Json?             // Previous value (null if first version)
+  newValue      Json              // New value after change
+  changedById   String
+  stepId        String?           // Which workflow step was active when changed
+  createdAt     DateTime          @default(now())
+  
+  // Relations
+  fieldValue    RequestFieldValue @relation(fields: [fieldValueId], references: [id], onDelete: Cascade)
+  changedBy     User              @relation(fields: [changedById], references: [id])
+  
+  // Indexes for efficient querying
+  @@index([fieldValueId])
+  @@index([changedById])
+  @@map("field_value_versions")
 }

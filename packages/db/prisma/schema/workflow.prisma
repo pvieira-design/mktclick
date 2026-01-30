@@ -18,6 +18,7 @@ model WorkflowStep {
   contentType           ContentType @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
   approverArea          Area?       @relation(fields: [approverAreaId], references: [id])
   currentRequests       Request[]   @relation("CurrentStep")
+  assignedFields        ContentTypeField[]
   
   @@index([contentTypeId])
   @@index([order])
