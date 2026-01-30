@@ -130,6 +130,17 @@ const saveFieldValuesInputSchema = z.object({
   fieldValues: z.record(z.string(), z.any()),
 });
 
+const saveFieldValueInputSchema = z.object({
+  requestId: z.string().cuid(),
+  fieldId: z.string().cuid(),
+  value: z.any(),
+});
+
+const getFieldVersionsInputSchema = z.object({
+  requestId: z.string().cuid(),
+  fieldId: z.string().cuid(),
+});
+
 export const requestRouter = router({
   list: protectedProcedure.input(listInputSchema).query(async ({ input }) => {
     const { status, contentType, search, page, limit } = input;
@@ -1078,5 +1089,187 @@ export const requestRouter = router({
       });
 
       return { success: true };
+    }),
+
+  saveFieldValue: protectedProcedure
+    .input(saveFieldValueInputSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      const userRole = ctx.session.user.role;
+      const { requestId, fieldId, value } = input;
+
+      const request = await db.request.findUnique({
+        where: { id: requestId },
+        select: {
+          id: true,
+          status: true,
+          createdById: true,
+          currentStepId: true,
+          currentStep: {
+            include: {
+              approverArea: { select: { id: true, name: true, slug: true } },
+            },
+          },
+        },
+      });
+
+      if (!request) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+      }
+
+      const field = await db.contentTypeField.findUnique({
+        where: { id: fieldId },
+        select: { id: true, assignedStepId: true },
+      });
+
+      if (!field) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Field not found" });
+      }
+
+      const status = request.status as RequestStatus;
+      const isCreator = request.createdById === userId;
+      const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN";
+
+      switch (status) {
+        case RequestStatus.CANCELLED:
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Cannot edit fields on cancelled requests",
+          });
+
+        case RequestStatus.DRAFT:
+          if (!isCreator) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Only the creator can edit fields in draft status",
+            });
+          }
+          break;
+
+        case RequestStatus.REJECTED: {
+          if (!isCreator) {
+            if (!request.currentStep) {
+              throw new TRPCError({
+                code: "FORBIDDEN",
+                message: "Only the creator can edit fields on this request",
+              });
+            }
+            const canEdit = await canUserApprove(userId, request.currentStep);
+            if (!canEdit) {
+              throw new TRPCError({
+                code: "FORBIDDEN",
+                message: "You are not authorized to edit fields on this request",
+              });
+            }
+          }
+          break;
+        }
+
+        case RequestStatus.IN_REVIEW:
+        case RequestStatus.PENDING: {
+          if (!request.currentStep) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Request has no current workflow step",
+            });
+          }
+          const canEdit = await canUserApprove(userId, request.currentStep);
+          if (!canEdit) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "You are not authorized to edit fields at this step",
+            });
+          }
+          if (
+            field.assignedStepId !== null &&
+            field.assignedStepId !== request.currentStepId
+          ) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "This field is not editable at the current workflow step",
+            });
+          }
+          break;
+        }
+
+        case RequestStatus.APPROVED:
+          if (!isAdmin) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Only admins can edit fields on approved requests",
+            });
+          }
+          break;
+
+        default:
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Cannot edit fields on this request",
+          });
+      }
+
+      return db.$transaction(async (tx) => {
+        const existing = await tx.requestFieldValue.findUnique({
+          where: { requestId_fieldId: { requestId, fieldId } },
+        });
+
+        let fieldValueId: string;
+        const oldValue = existing?.value ?? null;
+
+        if (existing) {
+          await tx.requestFieldValue.update({
+            where: { id: existing.id },
+            data: { value },
+          });
+          fieldValueId = existing.id;
+        } else {
+          const created = await tx.requestFieldValue.create({
+            data: { requestId, fieldId, value },
+          });
+          fieldValueId = created.id;
+        }
+
+        await tx.fieldValueVersion.create({
+          data: {
+            fieldValueId,
+            oldValue: oldValue === null ? undefined : oldValue,
+            newValue: value,
+            changedById: userId,
+            stepId: request.currentStepId,
+          },
+        });
+
+        return { success: true as const, fieldValueId };
+      });
+    }),
+
+  getFieldVersions: protectedProcedure
+    .input(getFieldVersionsInputSchema)
+    .query(async ({ input }) => {
+      const { requestId, fieldId } = input;
+
+      const fieldValue = await db.requestFieldValue.findUnique({
+        where: { requestId_fieldId: { requestId, fieldId } },
+        include: {
+          versions: {
+            include: {
+              changedBy: { select: { id: true, name: true, image: true } },
+            },
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      });
+
+      if (!fieldValue) {
+        return [];
+      }
+
+      return fieldValue.versions.map((v) => ({
+        oldValue: v.oldValue,
+        newValue: v.newValue,
+        changedBy: v.changedBy,
+        stepId: v.stepId,
+        createdAt: v.createdAt,
+      }));
     }),
 });
