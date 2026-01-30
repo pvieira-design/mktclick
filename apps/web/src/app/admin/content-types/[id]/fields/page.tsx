@@ -10,21 +10,8 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Select } from "@/components/base/select/select";
 import { Badge } from "@/components/base/badges/badges";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { SlideoutMenu } from "@/components/application/slideout-menus/slideout-menu";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,8 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Edit01, Trash01, ChevronUp, ChevronDown } from "@untitledui/icons";
-import Link from "next/link";
+import { Plus, Edit01, Trash01, ChevronUp, ChevronDown } from "@untitledui/icons";
 
 const fieldTypes = [
   { value: "TEXT", label: "Text", description: "Single line text input" },
@@ -55,18 +41,19 @@ const fieldTypes = [
 ];
 
 interface Field {
-  id: string;
-  name: string;
-  label: string;
-  fieldType: string;
-  required: boolean;
-  order: number;
-  options: any; 
-  placeholder: string | null;
-  helpText: string | null;
-  defaultValue: string | null;
-  isActive: boolean;
-}
+   id: string;
+   name: string;
+   label: string;
+   fieldType: string;
+   required: boolean;
+   order: number;
+   options: any; 
+   placeholder: string | null;
+   helpText: string | null;
+   defaultValue: string | null;
+   isActive: boolean;
+   assignedStep: { id: string; name: string } | null;
+ }
 
 interface FieldFormData {
   name: string;
@@ -99,10 +86,6 @@ export default function ContentTypeFieldsPage() {
   const [editingField, setEditingField] = useState<Field | null>(null);
   const [fieldToDelete, setFieldToDelete] = useState<Field | null>(null);
   const [formData, setFormData] = useState<FieldFormData>(initialFormData);
-
-  const { data: contentType, isLoading: isContentTypeLoading } = useQuery(
-    trpc.contentType.getById.queryOptions({ id: contentTypeId })
-  );
 
   const { data: fieldsData, isLoading: isFieldsLoading } = useQuery(
     trpc.contentTypeField.listByContentType.queryOptions({ contentTypeId })
@@ -241,44 +224,24 @@ export default function ContentTypeFieldsPage() {
     });
   };
 
-  const isLoading = isContentTypeLoading || isFieldsLoading;
+  const isLoading = isFieldsLoading;
   const fields = (fieldsData?.items || []) as unknown as Field[];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          href={`/admin/content-types/${contentTypeId}/edit` as any}
-        >
-          <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
-        </Link>
-        <div className="flex-1">
-          {isContentTypeLoading ? (
-            <Skeleton className="h-8 w-[200px]" />
-          ) : (
-            <>
-              <h1 className="text-2xl font-bold tracking-tight">
-                Fields: {contentType?.name}
-              </h1>
-              <p className="text-muted-foreground">
-                Configure custom fields for this content type.
-              </p>
-            </>
-          )}
+      <div className="rounded-xl bg-primary shadow-xs ring-1 ring-border-secondary">
+        <div className="flex items-center justify-between px-6 pt-6">
+          <div>
+            <h2 className="text-lg font-semibold text-primary">Custom Fields</h2>
+            <p className="text-sm text-tertiary mt-1">
+              {fields.length} field(s) configured. Drag to reorder.
+            </p>
+          </div>
+          <Button onClick={openCreateDialog} iconLeading={Plus}>
+            Add Field
+          </Button>
         </div>
-        <Button onClick={openCreateDialog} iconLeading={Plus}>
-          Add Field
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Custom Fields</CardTitle>
-          <CardDescription>
-            {fields.length} field(s) configured. Drag to reorder.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <div className="px-6 pb-6 pt-4">
           {isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -290,7 +253,7 @@ export default function ContentTypeFieldsPage() {
               {fields.map((field: Field, index: number) => (
                 <div
                   key={field.id}
-                  className="flex items-center gap-4 p-4 rounded-md border bg-card"
+                  className="flex items-center gap-4 p-4 rounded-lg ring-1 ring-border-secondary bg-primary"
                 >
                   <div className="flex flex-col">
                     <Button
@@ -309,17 +272,22 @@ export default function ContentTypeFieldsPage() {
                     />
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{field.label}</span>
-                      <Badge color="gray" type="pill-color" size="sm">{field.name}</Badge>
-                      {field.required && <Badge color="gray" size="sm">Required</Badge>}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {fieldTypes.find(t => t.value === field.fieldType)?.label || field.fieldType}
-                      {field.helpText && ` • ${field.helpText}`}
-                    </div>
-                  </div>
+                   <div className="flex-1 min-w-0">
+                     <div className="flex items-center gap-2 flex-wrap">
+                       <span className="font-medium">{field.label}</span>
+                       <Badge color="gray" type="pill-color" size="sm">{field.name}</Badge>
+                       {field.required && <Badge color="gray" size="sm">Required</Badge>}
+                       {field.assignedStep ? (
+                         <Badge color="brand" size="sm">{field.assignedStep.name}</Badge>
+                       ) : (
+                         <Badge color="gray" size="sm">Desagrupado</Badge>
+                       )}
+                     </div>
+                     <div className="text-sm text-tertiary">
+                       {fieldTypes.find(t => t.value === field.fieldType)?.label || field.fieldType}
+                       {field.helpText && ` • ${field.helpText}`}
+                     </div>
+                   </div>
 
                   <div className="flex items-center gap-1">
                     <Button
@@ -332,7 +300,7 @@ export default function ContentTypeFieldsPage() {
                       color="tertiary"
                       size="sm"
                       iconLeading={Trash01}
-                      className="text-destructive"
+                      className="text-error-primary"
                       onClick={() => setFieldToDelete(field)}
                     />
                   </div>
@@ -340,12 +308,12 @@ export default function ContentTypeFieldsPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-tertiary">
               No fields configured yet. Add a field to get started.
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <AlertDialog open={!!fieldToDelete} onOpenChange={(open) => !open && setFieldToDelete(null)}>
         <AlertDialogContent>
@@ -365,21 +333,28 @@ export default function ContentTypeFieldsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>{editingField ? "Edit Field" : "Add Field"}</DialogTitle>
-              <DialogDescription>
-                {editingField 
-                  ? "Update the field properties." 
-                  : "Configure a new field for this content type."}
-              </DialogDescription>
-            </DialogHeader>
+      <SlideoutMenu isOpen={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {({ close }) => (
+          <>
+            <SlideoutMenu.Header onClose={close}>
+              <div className="flex items-start gap-4 pr-8">
+                <FeaturedIcon icon={editingField ? Edit01 : Plus} theme="light" color="brand" size="md" />
+                <div>
+                  <h2 className="text-lg font-semibold text-primary">
+                    {editingField ? "Edit Field" : "Add Field"}
+                  </h2>
+                  <p className="text-sm text-tertiary mt-1">
+                    {editingField 
+                      ? "Update the field properties." 
+                      : "Configure a new field for this content type."}
+                  </p>
+                </div>
+              </div>
+            </SlideoutMenu.Header>
 
-            <div className="grid gap-4 py-4">
-              {!editingField && (
-                <div className="grid gap-2">
+            <SlideoutMenu.Content>
+              <form id="field-form" onSubmit={handleSubmit} className="space-y-4">
+                {!editingField && (
                   <Input
                     label="Field Name"
                     value={formData.name}
@@ -389,10 +364,8 @@ export default function ContentTypeFieldsPage() {
                     isRequired
                     {...{ pattern: "^[a-z][a-z0-9_]*$" }}
                   />
-                </div>
-              )}
+                )}
 
-              <div className="grid gap-2">
                 <Input
                   label="Display Label"
                   value={formData.label}
@@ -400,10 +373,8 @@ export default function ContentTypeFieldsPage() {
                   placeholder="Field Label"
                   isRequired
                 />
-              </div>
 
-              {!editingField && (
-                <div className="grid gap-2">
+                {!editingField && (
                   <Select
                     label="Field Type"
                     selectedKey={formData.fieldType}
@@ -418,11 +389,9 @@ export default function ContentTypeFieldsPage() {
                       />
                     ))}
                   </Select>
-                </div>
-              )}
+                )}
 
-              {formData.fieldType === "SELECT" && (
-                <div className="grid gap-2">
+                {formData.fieldType === "SELECT" && (
                   <TextArea
                     label="Options"
                     value={formData.options}
@@ -431,65 +400,57 @@ export default function ContentTypeFieldsPage() {
                     rows={4}
                     hint="One option per line."
                   />
-                </div>
-              )}
+                )}
 
-              {["TEXT", "TEXTAREA", "URL"].includes(formData.fieldType) && (
-                <div className="grid gap-2">
+                {["TEXT", "TEXTAREA", "URL"].includes(formData.fieldType) && (
                   <Input
                     label="Placeholder"
                     value={formData.placeholder}
                     onChange={(value) => setFormData({ ...formData, placeholder: value })}
                     placeholder="Enter placeholder text..."
                   />
-                </div>
-              )}
+                )}
 
-              <div className="grid gap-2">
                 <Input
                   label="Help Text"
                   value={formData.helpText}
                   onChange={(value) => setFormData({ ...formData, helpText: value })}
                   placeholder="Additional instructions for users..."
                 />
-              </div>
 
-              <div className="grid gap-2">
                 <Input
                   label="Default Value"
                   value={formData.defaultValue}
                   onChange={(value) => setFormData({ ...formData, defaultValue: value })}
                   placeholder="Default value for this field"
                 />
-              </div>
 
-              <div className="flex items-center gap-2">
                 <Checkbox
+                  label="Required field"
                   isSelected={formData.required}
                   onChange={(checked) => 
                     setFormData({ ...formData, required: checked === true })
                   }
-                >
-                  Required field
-                </Checkbox>
-              </div>
-            </div>
+                />
+              </form>
+            </SlideoutMenu.Content>
 
-            <DialogFooter>
-              <Button type="button" color="secondary" onClick={closeDialog}>
+            <SlideoutMenu.Footer className="flex items-center justify-end gap-3">
+              <Button type="button" color="secondary" onClick={close}>
                 Cancel
               </Button>
               <Button 
-                type="submit" 
+                type="submit"
+                form="field-form"
                 isDisabled={createFieldMutation.isPending || updateFieldMutation.isPending}
                 isLoading={createFieldMutation.isPending || updateFieldMutation.isPending}
               >
                 {editingField ? "Save Changes" : "Add Field"}
               </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </SlideoutMenu.Footer>
+          </>
+        )}
+      </SlideoutMenu>
     </div>
   );
 }

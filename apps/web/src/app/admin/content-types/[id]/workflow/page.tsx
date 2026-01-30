@@ -10,21 +10,9 @@ import { TextArea } from "@/components/base/textarea/textarea";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Select } from "@/components/base/select/select";
 import { Badge } from "@/components/base/badges/badges";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
+import { SlideoutMenu } from "@/components/application/slideout-menus/slideout-menu";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,8 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Edit01, Trash01, ChevronUp, ChevronDown, Flag01 } from "@untitledui/icons";
-import Link from "next/link";
+import { Plus, Edit01, Trash01, ChevronUp, ChevronDown, Flag01 } from "@untitledui/icons";
 
 interface WorkflowStep {
   id: string;
@@ -62,30 +49,33 @@ interface Area {
 }
 
 interface Field {
-  id: string;
-  name: string;
-  label: string;
-}
+   id: string;
+   name: string;
+   label: string;
+   assignedStep: { id: string; name: string } | null;
+ }
 
 interface StepFormData {
-  name: string;
-  description: string;
-  requiredFieldsToEnter: string[];
-  requiredFieldsToExit: string[];
-  approverAreaId: string;
-  approverPositions: string[];
-  isFinalStep: boolean;
-}
+   name: string;
+   description: string;
+   requiredFieldsToEnter: string[];
+   requiredFieldsToExit: string[];
+   approverAreaId: string;
+   approverPositions: string[];
+   isFinalStep: boolean;
+   assignedFields: string[];
+ }
 
 const initialStepForm: StepFormData = {
-  name: "",
-  description: "",
-  requiredFieldsToEnter: [],
-  requiredFieldsToExit: [],
-  approverAreaId: "",
-  approverPositions: [],
-  isFinalStep: false,
-};
+   name: "",
+   description: "",
+   requiredFieldsToEnter: [],
+   requiredFieldsToExit: [],
+   approverAreaId: "",
+   approverPositions: [],
+   isFinalStep: false,
+   assignedFields: [],
+ };
 
 export default function ContentTypeWorkflowPage() {
   const params = useParams();
@@ -97,16 +87,8 @@ export default function ContentTypeWorkflowPage() {
   const [stepToDelete, setStepToDelete] = useState<WorkflowStep | null>(null);
   const [stepForm, setStepForm] = useState<StepFormData>(initialStepForm);
 
-  const { data: contentType, isLoading: isContentTypeLoading } = useQuery(
-    trpc.contentType.getById.queryOptions({ id: contentTypeId })
-  );
-
   const { data: stepsData, isLoading: isStepsLoading } = useQuery(
     trpc.workflow.getStepsByContentType.queryOptions({ contentTypeId })
-  );
-
-  const { data: permissionsData } = useQuery(
-    trpc.workflow.getAreaPermissions.queryOptions({ contentTypeId })
   );
 
   const { data: areasData } = useQuery(trpc.area.list.queryOptions());
@@ -145,21 +127,21 @@ export default function ContentTypeWorkflowPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const reorderStepsMutation = useMutation({
-    ...(trpc.workflow.reorderSteps.mutationOptions as any)(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [["workflow", "getStepsByContentType"]] });
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
+   const reorderStepsMutation = useMutation({
+     ...(trpc.workflow.reorderSteps.mutationOptions as any)(),
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: [["workflow", "getStepsByContentType"]] });
+     },
+     onError: (error: Error) => toast.error(error.message),
+   });
 
-  const setPermissionMutation = useMutation({
-    ...(trpc.workflow.setAreaPermission.mutationOptions as any)(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [["workflow", "getAreaPermissions"]] });
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
+   const assignFieldsToStepMutation = useMutation({
+     ...(trpc.contentTypeField.assignToStep.mutationOptions as any)(),
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: [["contentTypeField", "listByContentType"]] });
+     },
+     onError: (error: Error) => toast.error(error.message),
+   });
 
   const openCreateStepDialog = () => {
     setEditingStep(null);
@@ -167,19 +149,23 @@ export default function ContentTypeWorkflowPage() {
     setIsStepDialogOpen(true);
   };
 
-  const openEditStepDialog = (step: WorkflowStep) => {
-    setEditingStep(step);
-    setStepForm({
-      name: step.name,
-      description: step.description || "",
-      requiredFieldsToEnter: step.requiredFieldsToEnter,
-      requiredFieldsToExit: step.requiredFieldsToExit,
-      approverAreaId: step.approverAreaId || "",
-      approverPositions: step.approverPositions,
-      isFinalStep: step.isFinalStep,
-    });
-    setIsStepDialogOpen(true);
-  };
+   const openEditStepDialog = (step: WorkflowStep) => {
+     setEditingStep(step);
+     const assignedFieldNames = fields
+       .filter((f: Field) => f.assignedStep?.id === step.id)
+       .map((f: Field) => f.name);
+     setStepForm({
+       name: step.name,
+       description: step.description || "",
+       requiredFieldsToEnter: step.requiredFieldsToEnter,
+       requiredFieldsToExit: step.requiredFieldsToExit,
+       approverAreaId: step.approverAreaId || "",
+       approverPositions: step.approverPositions,
+       isFinalStep: step.isFinalStep,
+       assignedFields: assignedFieldNames,
+     });
+     setIsStepDialogOpen(true);
+   };
 
   const closeStepDialog = () => {
     setIsStepDialogOpen(false);
@@ -187,35 +173,58 @@ export default function ContentTypeWorkflowPage() {
     setStepForm(initialStepForm);
   };
 
-  const handleStepSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+   const handleStepSubmit = (e: React.FormEvent) => {
+     e.preventDefault();
 
-    if (editingStep) {
-      (updateStepMutation.mutate as any)({
-        id: editingStep.id,
-        name: stepForm.name,
-        description: stepForm.description || undefined,
-        requiredFieldsToEnter: stepForm.requiredFieldsToEnter,
-        requiredFieldsToExit: stepForm.requiredFieldsToExit,
-        approverAreaId: stepForm.approverAreaId || null,
-        approverPositions: stepForm.approverPositions,
-        isFinalStep: stepForm.isFinalStep,
-      });
-    } else {
-      const nextOrder = stepsData?.length || 0;
-      (createStepMutation.mutate as any)({
-        contentTypeId,
-        name: stepForm.name,
-        description: stepForm.description || undefined,
-        order: nextOrder,
-        requiredFieldsToEnter: stepForm.requiredFieldsToEnter,
-        requiredFieldsToExit: stepForm.requiredFieldsToExit,
-        approverAreaId: stepForm.approverAreaId || undefined,
-        approverPositions: stepForm.approverPositions,
-        isFinalStep: stepForm.isFinalStep,
-      });
-    }
-  };
+     const handleAssignFields = () => {
+       const fieldsToAssign = fields
+         .filter((f: Field) => stepForm.assignedFields.includes(f.name))
+         .map((f: Field) => f.id);
+       const fieldsToUnassign = fields
+         .filter((f: Field) => f.assignedStep?.id === editingStep?.id && !stepForm.assignedFields.includes(f.name))
+         .map((f: Field) => f.id);
+
+       if (fieldsToAssign.length > 0) {
+         (assignFieldsToStepMutation.mutate as any)({
+           fieldIds: fieldsToAssign,
+           stepId: editingStep?.id || null,
+         });
+       }
+       if (fieldsToUnassign.length > 0) {
+         (assignFieldsToStepMutation.mutate as any)({
+           fieldIds: fieldsToUnassign,
+           stepId: null,
+         });
+       }
+     };
+
+     if (editingStep) {
+       (updateStepMutation.mutate as any)({
+         id: editingStep.id,
+         name: stepForm.name,
+         description: stepForm.description || undefined,
+         requiredFieldsToEnter: stepForm.requiredFieldsToEnter,
+         requiredFieldsToExit: stepForm.requiredFieldsToExit,
+         approverAreaId: stepForm.approverAreaId || null,
+         approverPositions: stepForm.approverPositions,
+         isFinalStep: stepForm.isFinalStep,
+       });
+       handleAssignFields();
+     } else {
+       const nextOrder = stepsData?.length || 0;
+       (createStepMutation.mutate as any)({
+         contentTypeId,
+         name: stepForm.name,
+         description: stepForm.description || undefined,
+         order: nextOrder,
+         requiredFieldsToEnter: stepForm.requiredFieldsToEnter,
+         requiredFieldsToExit: stepForm.requiredFieldsToExit,
+         approverAreaId: stepForm.approverAreaId || undefined,
+         approverPositions: stepForm.approverPositions,
+         isFinalStep: stepForm.isFinalStep,
+       });
+     }
+   };
 
   const handleDeleteStep = () => {
     if (stepToDelete) {
@@ -235,14 +244,6 @@ export default function ContentTypeWorkflowPage() {
     });
   };
 
-  const handlePermissionToggle = (areaId: string, currentValue: boolean) => {
-    (setPermissionMutation.mutate as any)({
-      contentTypeId,
-      areaId,
-      canCreate: !currentValue,
-    });
-  };
-
   const toggleFieldInList = (fieldName: string, list: "enter" | "exit") => {
     const key = list === "enter" ? "requiredFieldsToEnter" : "requiredFieldsToExit";
     const current = stepForm[key];
@@ -253,87 +254,43 @@ export default function ContentTypeWorkflowPage() {
     }
   };
 
-  const togglePosition = (position: string) => {
-    const current = stepForm.approverPositions;
-    if (current.includes(position)) {
-      setStepForm({ ...stepForm, approverPositions: current.filter((p: string) => p !== position) });
-    } else {
-      setStepForm({ ...stepForm, approverPositions: [...current, position] });
-    }
-  };
+   const togglePosition = (position: string) => {
+     const current = stepForm.approverPositions;
+     if (current.includes(position)) {
+       setStepForm({ ...stepForm, approverPositions: current.filter((p: string) => p !== position) });
+     } else {
+       setStepForm({ ...stepForm, approverPositions: [...current, position] });
+     }
+   };
+
+   const toggleAssignedField = (fieldName: string) => {
+     const current = stepForm.assignedFields;
+     if (current.includes(fieldName)) {
+       setStepForm({ ...stepForm, assignedFields: current.filter((f: string) => f !== fieldName) });
+     } else {
+       setStepForm({ ...stepForm, assignedFields: [...current, fieldName] });
+     }
+   };
 
   const steps = stepsData || [];
   const areas = areasData?.items || [];
   const fields = fieldsData?.items || [];
-  const permissions = permissionsData || [];
-
-  const getAreaPermission = (areaId: string) => {
-    return permissions.find((p: any) => p.areaId === areaId)?.canCreate || false;
-  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          href={`/admin/content-types/${contentTypeId}/edit` as any}
-        >
-          <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
-        </Link>
-        <div className="flex-1">
-          {isContentTypeLoading ? (
-            <Skeleton className="h-8 w-[200px]" />
-          ) : (
-            <>
-              <h1 className="text-2xl font-bold tracking-tight">
-                Workflow: {contentType?.name}
-              </h1>
-              <p className="text-muted-foreground">
-                Configure approval workflow and area permissions.
-              </p>
-            </>
-          )}
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Area Permissions</CardTitle>
-          <CardDescription>
-            Select which areas can create requests of this type.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {areas.map((area: Area) => (
-              <div key={area.id} className="flex items-center justify-between p-3 rounded-md border">
-                <span className="font-medium">{area.name}</span>
-                <Checkbox
-                  isSelected={getAreaPermission(area.id)}
-                  onChange={() => handlePermissionToggle(area.id, getAreaPermission(area.id))}
-                  isDisabled={setPermissionMutation.isPending}
-                />
-              </div>
-            ))}
-            {areas.length === 0 && (
-              <p className="text-sm text-muted-foreground">No areas available.</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+      <div className="rounded-xl bg-primary shadow-xs ring-1 ring-border-secondary">
+        <div className="flex flex-row items-center justify-between px-6 pt-6">
           <div>
-            <CardTitle>Workflow Steps</CardTitle>
-            <CardDescription>
+            <h2 className="text-lg font-semibold text-primary">Workflow Steps</h2>
+            <p className="text-sm text-tertiary mt-1">
               Define the approval flow for this content type.
-            </CardDescription>
+            </p>
           </div>
           <Button onClick={openCreateStepDialog} iconLeading={Plus}>
             Add Step
           </Button>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div className="px-6 pb-6 pt-4">
           {isStepsLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -343,7 +300,7 @@ export default function ContentTypeWorkflowPage() {
           ) : steps.length > 0 ? (
             <div className="space-y-2">
               {steps.map((step: WorkflowStep, index: number) => (
-                <div key={step.id} className="flex items-start gap-4 p-4 rounded-md border bg-card">
+                <div key={step.id} className="flex items-start gap-4 p-4 rounded-lg ring-1 ring-border-secondary bg-primary">
                   <div className="flex flex-col gap-1">
                     <Button
                       color="tertiary"
@@ -352,7 +309,7 @@ export default function ContentTypeWorkflowPage() {
                       isDisabled={index === 0 || reorderStepsMutation.isPending}
                       iconLeading={ChevronUp}
                     />
-                    <span className="text-center text-sm font-bold text-muted-foreground">
+                    <span className="text-center text-sm font-bold text-tertiary">
                       {index + 1}
                     </span>
                     <Button
@@ -375,9 +332,9 @@ export default function ContentTypeWorkflowPage() {
                       )}
                     </div>
                     {step.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
+                      <p className="text-sm text-tertiary mt-1">{step.description}</p>
                     )}
-                    <div className="flex gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
+                    <div className="flex gap-4 mt-2 text-xs text-tertiary flex-wrap">
                       {step.approverArea && (
                         <span>
                           Approver: <strong>{step.approverArea.name}</strong>
@@ -413,34 +370,43 @@ export default function ContentTypeWorkflowPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-tertiary">
               No workflow steps defined. Add a step to get started.
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Dialog open={isStepDialogOpen} onOpenChange={setIsStepDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <form onSubmit={handleStepSubmit}>
-            <DialogHeader>
-              <DialogTitle>{editingStep ? "Edit Step" : "Add Step"}</DialogTitle>
-              <DialogDescription>
-                Configure the workflow step properties.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
+      <SlideoutMenu isOpen={isStepDialogOpen} onOpenChange={setIsStepDialogOpen} className="!max-w-[600px]">
+        {({ close }) => (
+          <>
+            <SlideoutMenu.Header onClose={close}>
+              <div className="flex items-start gap-4 pr-8">
+                <FeaturedIcon
+                  icon={editingStep ? Edit01 : Plus}
+                  theme="light"
+                  color="brand"
+                  size="md"
+                />
+                <div>
+                  <h2 className="text-lg font-semibold text-primary">
+                    {editingStep ? "Edit Step" : "Add Step"}
+                  </h2>
+                  <p className="text-sm text-tertiary mt-1">
+                    Configure the workflow step properties.
+                  </p>
+                </div>
+              </div>
+            </SlideoutMenu.Header>
+            <SlideoutMenu.Content>
+              <form id="step-form" onSubmit={handleStepSubmit} className="space-y-4">
                 <Input
                   label="Step Name"
                   value={stepForm.name}
                   onChange={(value) => setStepForm({ ...stepForm, name: value })}
                   placeholder="e.g. Design Review"
                 />
-              </div>
 
-              <div className="grid gap-2">
                 <TextArea
                   label="Description"
                   value={stepForm.description}
@@ -448,9 +414,7 @@ export default function ContentTypeWorkflowPage() {
                   placeholder="What happens in this step..."
                   rows={2}
                 />
-              </div>
 
-              <div className="grid gap-2">
                 <Select
                   label="Approver Area"
                   selectedKey={stepForm.approverAreaId}
@@ -462,96 +426,111 @@ export default function ContentTypeWorkflowPage() {
                     <Select.Item key={area.id} id={area.id} label={area.name} />
                   ))}
                 </Select>
-              </div>
 
-              {stepForm.approverAreaId && (
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Approver Positions
-                  </label>
-                  <div className="flex gap-4">
-                    {["HEAD", "COORDINATOR", "STAFF"].map((pos) => (
-                      <Checkbox
-                        key={pos}
-                        isSelected={stepForm.approverPositions.includes(pos)}
-                        onChange={() => togglePosition(pos)}
-                      >
-                        {pos}
-                      </Checkbox>
-                    ))}
+                {stepForm.approverAreaId && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none">
+                      Approver Positions
+                    </label>
+                    <div className="flex gap-4">
+                      {["HEAD", "COORDINATOR", "STAFF"].map((pos) => (
+                        <Checkbox
+                          key={pos}
+                          label={pos}
+                          isSelected={stepForm.approverPositions.includes(pos)}
+                          onChange={() => togglePosition(pos)}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-tertiary">
+                      Any member with these positions can approve.
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Any member with these positions can approve.
-                  </p>
-                </div>
-              )}
+                )}
 
-              {fields.length > 0 && (
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Required Fields to Enter Step
-                  </label>
-                  <div className="border rounded-md p-3 space-y-2 max-h-32 overflow-y-auto">
-                    {fields.map((field: Field) => (
-                      <Checkbox
-                        key={field.id}
-                        isSelected={stepForm.requiredFieldsToEnter.includes(field.name)}
-                        onChange={() => toggleFieldInList(field.name, "enter")}
-                      >
-                        {field.label}
-                      </Checkbox>
-                    ))}
+                {fields.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none">
+                      Required Fields to Enter Step
+                    </label>
+                    <div className="rounded-lg ring-1 ring-border-secondary p-3 space-y-2 max-h-32 overflow-y-auto">
+                      {fields.map((field: Field) => (
+                        <Checkbox
+                          key={field.id}
+                          label={field.label}
+                          isSelected={stepForm.requiredFieldsToEnter.includes(field.name)}
+                          onChange={() => toggleFieldInList(field.name, "enter")}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {fields.length > 0 && (
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Required Fields to Exit Step
-                  </label>
-                  <div className="border rounded-md p-3 space-y-2 max-h-32 overflow-y-auto">
-                    {fields.map((field: Field) => (
-                      <Checkbox
-                        key={field.id}
-                        isSelected={stepForm.requiredFieldsToExit.includes(field.name)}
-                        onChange={() => toggleFieldInList(field.name, "exit")}
-                      >
-                        {field.label}
-                      </Checkbox>
-                    ))}
-                  </div>
-                </div>
-              )}
+                 {fields.length > 0 && (
+                   <div className="space-y-2">
+                     <label className="text-sm font-medium leading-none">
+                       Required Fields to Exit Step
+                     </label>
+                     <div className="rounded-lg ring-1 ring-border-secondary p-3 space-y-2 max-h-32 overflow-y-auto">
+                       {fields.map((field: Field) => (
+                         <Checkbox
+                           key={field.id}
+                           label={field.label}
+                           isSelected={stepForm.requiredFieldsToExit.includes(field.name)}
+                           onChange={() => toggleFieldInList(field.name, "exit")}
+                         />
+                       ))}
+                     </div>
+                   </div>
+                 )}
 
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  isSelected={stepForm.isFinalStep}
-                  onChange={(checked) => 
-                    setStepForm({ ...stepForm, isFinalStep: checked === true })
-                  }
-                >
-                  This is the final step (marks request as complete)
-                </Checkbox>
-              </div>
-            </div>
+                 {fields.length > 0 && (
+                   <div className="space-y-2">
+                     <label className="text-sm font-medium leading-none">
+                       Campos deste Step
+                     </label>
+                     <div className="rounded-lg ring-1 ring-border-secondary p-3 space-y-2 max-h-32 overflow-y-auto">
+                       {fields.map((field: Field) => (
+                         <Checkbox
+                           key={field.id}
+                           label={field.label}
+                           isSelected={stepForm.assignedFields.includes(field.name)}
+                           onChange={() => toggleAssignedField(field.name)}
+                         />
+                       ))}
+                     </div>
+                     <p className="text-xs text-tertiary">
+                       Fields assigned to this step will be grouped together in the workflow.
+                     </p>
+                   </div>
+                 )}
 
-            <DialogFooter>
-              <Button type="button" color="secondary" onClick={closeStepDialog}>
+                 <Checkbox
+                   label="This is the final step (marks request as complete)"
+                   isSelected={stepForm.isFinalStep}
+                   onChange={(checked) => 
+                     setStepForm({ ...stepForm, isFinalStep: checked === true })
+                   }
+                 />
+              </form>
+            </SlideoutMenu.Content>
+            <SlideoutMenu.Footer className="flex items-center justify-end gap-3">
+              <Button color="secondary" onClick={close}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
+                form="step-form"
                 isDisabled={createStepMutation.isPending || updateStepMutation.isPending}
               >
                 {(createStepMutation.isPending || updateStepMutation.isPending) 
                   ? "Saving..." 
                   : editingStep ? "Save Changes" : "Add Step"}
               </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </SlideoutMenu.Footer>
+          </>
+        )}
+      </SlideoutMenu>
 
       <AlertDialog open={!!stepToDelete} onOpenChange={(open) => !open && setStepToDelete(null)}>
         <AlertDialogContent>

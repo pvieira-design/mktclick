@@ -6,18 +6,23 @@ import db, { FieldType } from "@marketingclickcannabis/db";
 import { adminProcedure, publicProcedure, router } from "../index";
 
 export const contentTypeFieldRouter = router({
-  listByContentType: publicProcedure
-    .input(z.object({ contentTypeId: z.string().cuid() }))
-    .query(async ({ input }) => {
-      const fields = await db.contentTypeField.findMany({
-        where: {
-          contentTypeId: input.contentTypeId,
-          isActive: true,
-        },
-        orderBy: { order: "asc" },
-      });
-      return { items: fields };
-    }),
+   listByContentType: publicProcedure
+     .input(z.object({ contentTypeId: z.string().cuid() }))
+     .query(async ({ input }) => {
+       const fields = await db.contentTypeField.findMany({
+         where: {
+           contentTypeId: input.contentTypeId,
+           isActive: true,
+         },
+         include: {
+           assignedStep: {
+             select: { id: true, name: true },
+           },
+         },
+         orderBy: { order: "asc" },
+       });
+       return { items: fields };
+     }),
 
   getById: publicProcedure
     .input(z.object({ id: z.string().cuid() }))
@@ -165,32 +170,51 @@ export const contentTypeFieldRouter = router({
       }
     }),
 
-  reorder: adminProcedure
-    .input(
-      z.object({
-        contentTypeId: z.string().cuid(),
-        fieldIds: z.array(z.string().cuid()),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const contentType = await db.contentType.findUnique({
-        where: { id: input.contentTypeId },
-      });
-      if (!contentType) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "ContentType not found",
-        });
-      }
+   reorder: adminProcedure
+     .input(
+       z.object({
+         contentTypeId: z.string().cuid(),
+         fieldIds: z.array(z.string().cuid()),
+       })
+     )
+     .mutation(async ({ input }) => {
+       const contentType = await db.contentType.findUnique({
+         where: { id: input.contentTypeId },
+       });
+       if (!contentType) {
+         throw new TRPCError({
+           code: "NOT_FOUND",
+           message: "ContentType not found",
+         });
+       }
 
-      const updates = input.fieldIds.map((fieldId, index) =>
-        db.contentTypeField.update({
-          where: { id: fieldId },
-          data: { order: index },
-        })
-      );
+       const updates = input.fieldIds.map((fieldId, index) =>
+         db.contentTypeField.update({
+           where: { id: fieldId },
+           data: { order: index },
+         })
+       );
 
-      const updated = await Promise.all(updates);
-      return { items: updated };
-    }),
+       const updated = await Promise.all(updates);
+       return { items: updated };
+     }),
+
+   assignToStep: adminProcedure
+     .input(
+       z.object({
+         fieldIds: z.array(z.string().cuid()),
+         stepId: z.string().cuid().nullable(),
+       })
+     )
+     .mutation(async ({ input }) => {
+       const updates = input.fieldIds.map((fieldId) =>
+         db.contentTypeField.update({
+           where: { id: fieldId },
+           data: { assignedStepId: input.stepId },
+         })
+       );
+
+       const updated = await Promise.all(updates);
+       return { updated: updated.length };
+     }),
 });
