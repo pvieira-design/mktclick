@@ -328,6 +328,33 @@ export const requestRouter = router({
               },
             });
           }
+
+          // Auto-tag files with "Referências Visuais" tag
+          const refVisuaisTag = await tx.fileTag.findUnique({
+            where: { name: "Referências Visuais" },
+          });
+
+          if (refVisuaisTag) {
+            const existingLinks = await tx.fileTagOnFile.findMany({
+              where: {
+                fileId: { in: input.fileIds },
+                tagId: refVisuaisTag.id,
+              },
+              select: { fileId: true },
+            });
+
+            const alreadyTaggedIds = new Set(existingLinks.map((l) => l.fileId));
+            const toTag = input.fileIds.filter((id) => !alreadyTaggedIds.has(id));
+
+            if (toTag.length > 0) {
+              await tx.fileTagOnFile.createMany({
+                data: toTag.map((fileId) => ({
+                  fileId,
+                  tagId: refVisuaisTag.id,
+                })),
+              });
+            }
+          }
         }
 
         return request;
@@ -827,19 +854,19 @@ export const requestRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "You are not authorized to approve this step" });
         }
 
-        const fieldValuesMap = buildFieldValuesMap(
-          request.fieldValues,
-          request.contentType.fields
-        );
-        const validation = validateRequiredFields(request.currentStep, fieldValuesMap, "exit");
-        if (!validation.valid) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Missing required fields: ${validation.missingFields.join(", ")}`,
-          });
-        }
+         const fieldValuesMap = buildFieldValuesMap(
+           request.fieldValues,
+           request.contentType.fields
+         );
+         const validation = validateRequiredFields(request.currentStep, fieldValuesMap, "exit");
+         if (!validation.valid) {
+           throw new TRPCError({
+             code: "BAD_REQUEST",
+             message: `Missing required fields to exit step: ${validation.missingFields.join(", ")}`,
+           });
+         }
 
-        if (request.currentStep.isFinalStep) {
+         if (request.currentStep.isFinalStep) {
           const updated = await tx.request.update({
             where: { id: input.id },
             data: {
@@ -860,12 +887,23 @@ export const requestRouter = router({
           return updated;
         }
 
-        const nextStep = await getNextStep(request.contentTypeId, request.currentStep.order);
-        if (!nextStep) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No next step found in workflow" });
-        }
+         const nextStep = await getNextStep(request.contentTypeId, request.currentStep.order);
+         if (!nextStep) {
+           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No next step found in workflow" });
+         }
 
-        const updated = await tx.request.update({
+         // Validate required fields to enter the next step
+         if (nextStep.requiredFieldsToEnter && nextStep.requiredFieldsToEnter.length > 0) {
+           const enterValidation = validateRequiredFields(nextStep, fieldValuesMap, "enter");
+           if (!enterValidation.valid) {
+             throw new TRPCError({
+               code: "BAD_REQUEST",
+               message: `Missing required fields to enter next step: ${enterValidation.missingFields.join(", ")}`,
+             });
+           }
+         }
+
+         const updated = await tx.request.update({
           where: { id: input.id },
           data: {
             currentStepId: nextStep.id,
