@@ -5,33 +5,34 @@ enum UserRole {
 }
 
 model User {
-   id                 String    @id
-   name               String
-   email              String    @unique
-   emailVerified      Boolean   @default(false)
-   image              String?
-   createdAt          DateTime  @default(now())
-   updatedAt          DateTime  @updatedAt
-   role               UserRole  @default(USER)
-   banned             Boolean?  @default(false)
-   banReason          String?
-   banExpires         DateTime?
-   mustChangePassword Boolean   @default(false)
-   
-       // Relations
-       accounts           Account[]
-       sessions           Session[]
-       createdRequests    Request[] @relation("RequestCreator")
-       reviewedRequests   Request[] @relation("RequestReviewer")
-       requestHistories   RequestHistory[] @relation("HistoryChanger")
-       areaMemberships    AreaMember[] @relation("UserAreaMemberships")
-        responsibleForCreators Creator[] @relation("CreatorResponsible")
-        comments           Comment[]
-        uploadedFiles      File[] @relation("FileUploader")
-        fieldValueVersions FieldValueVersion[]
-        adCreativeLinks    AdCreativeMedia[] @relation("AdCreativeLinker")
+    id                 String    @id
+    name               String
+    email              String    @unique
+    emailVerified      Boolean   @default(false)
+    image              String?
+    createdAt          DateTime  @default(now())
+    updatedAt          DateTime  @updatedAt
+    role               UserRole  @default(USER)
+    banned             Boolean?  @default(false)
+    banReason          String?
+    banExpires         DateTime?
+    mustChangePassword Boolean   @default(false)
+    
+        // Relations
+        accounts           Account[]
+        sessions           Session[]
+        createdRequests    Request[] @relation("RequestCreator")
+        reviewedRequests   Request[] @relation("RequestReviewer")
+        requestHistories   RequestHistory[] @relation("HistoryChanger")
+        areaMemberships    AreaMember[] @relation("UserAreaMemberships")
+         responsibleForCreators Creator[] @relation("CreatorResponsible")
+         comments           Comment[]
+         uploadedFiles      File[] @relation("FileUploader")
+         fieldValueVersions FieldValueVersion[]
+         adCreativeLinks    AdCreativeMedia[] @relation("AdCreativeLinker")
+         adProjects         AdProject[] @relation("AdProjectCreator")
 
-   @@map("user")
+    @@map("user")
 }
 
 model Session {

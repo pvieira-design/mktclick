@@ -5,6 +5,23 @@ enum TagGroup {
   REQUEST
 }
 
+model FileFolder {
+  id        String   @id @default(cuid())
+  name      String
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  parent   FileFolder?  @relation("FolderNesting", fields: [parentId], references: [id], onDelete: Cascade)
+  children FileFolder[] @relation("FolderNesting")
+  files    File[]
+
+  @@index([parentId])
+  @@index([createdAt])
+  @@map("file_folder")
+}
+
 model File {
   id           String   @id @default(cuid())
   name         String
@@ -18,21 +35,25 @@ model File {
   uploadedById String
   creatorId    String?
   originId     String?
+  folderId     String?
   isArchived   Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // Relations
-  uploadedBy User            @relation("FileUploader", fields: [uploadedById], references: [id])
-  creator    Creator?        @relation("FileCreator", fields: [creatorId], references: [id])
-  origin     Origin?         @relation("FileOrigin", fields: [originId], references: [id])
-  tags       FileTagOnFile[]
-  requests   RequestFile[]
-  adCreatives AdCreativeMedia[]
+  uploadedBy     User            @relation("FileUploader", fields: [uploadedById], references: [id])
+  creator        Creator?        @relation("FileCreator", fields: [creatorId], references: [id])
+  origin         Origin?         @relation("FileOrigin", fields: [originId], references: [id])
+  folder         FileFolder?     @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  tags           FileTagOnFile[]
+  requests       RequestFile[]
+  adCreatives    AdCreativeMedia[]
+  adDeliverables AdDeliverable[] @relation("AdDeliverableFile")
 
   @@index([uploadedById])
   @@index([creatorId])
   @@index([originId])
+  @@index([folderId])
   @@index([mimeType])
   @@index([isArchived])
   @@index([createdAt])

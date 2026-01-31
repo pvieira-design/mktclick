@@ -25,6 +25,7 @@ model Origin {
   name        String    @unique
   slug        String    @unique
   description String?   @db.Text
+  code        String?
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -32,6 +33,7 @@ model Origin {
   // Relations
   requests    Request[]
   files       File[]    @relation("FileOrigin")
+  adProjects  AdProject[]
   
   @@map("origin")
 }

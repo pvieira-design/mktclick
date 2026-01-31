@@ -1,0 +1,231 @@
+// === ENUMS PARA ADS TYPES ===
+
+enum AdProjectStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// Status do video dentro de cada fase
+// Nem todos os valores sao usados em todas as fases
+// Cada fase usa um subconjunto (documentado em regras-de-negocio.md)
+enum AdVideoPhaseStatus {
+  // Genericos (usados em multiplas fases)
+  PENDENTE
+  EM_ANDAMENTO
+  PRONTO
+
+  // Fase 3 especificos
+  ELENCO
+  PRE_PROD
+
+  // Fase 4 especificos
+  EM_PRODUCAO
+  ENTREGUE
+
+  // Fase 5 especificos
+  EM_REVISAO
+  VALIDANDO
+
+  // Fase 6 especificos
+  APROVADO
+  NOMENCLATURA
+  PUBLICADO
+}
+
+enum AdVideoTema {
+  GERAL
+  SONO
+  ANSIEDADE
+  DEPRESSAO
+  PESO
+  DISF
+  DORES
+  FOCO
+  PERFORM
+  PATOLOGIAS
+  TABACO
+}
+
+enum AdVideoEstilo {
+  UGC
+  EDUC
+  COMED
+  DEPOI
+  POV
+  STORY
+  MITOS
+  QA
+  ANTES
+  REVIEW
+  REACT
+  TREND
+  INST
+}
+
+enum AdVideoFormato {
+  VID
+  MOT
+  IMG
+  CRSEL
+}
+
+enum AdDeliverableTempo {
+  T15S
+  T30S
+  T45S
+  T60S
+  T90S
+  T120S
+  T180S
+}
+
+enum AdDeliverableTamanho {
+  S9X16
+  S1X1
+  S4X5
+  S16X9
+  S2X3
+}
+
+// === MODELS PARA ADS TYPES ===
+
+model AdType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+  icon        String?
+  color       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  projects AdProject[]
+
+  @@map("ad_type")
+}
+
+model AdProject {
+  id           String          @id @default(cuid())
+  title        String
+  adTypeId     String
+  originId     String
+  briefing     String          @db.Text
+  deadline     DateTime?
+  priority     Priority?
+  currentPhase Int             @default(1)
+  status       AdProjectStatus @default(DRAFT)
+  createdById  String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  // Relations
+  adType    AdType  @relation(fields: [adTypeId], references: [id])
+  origin    Origin  @relation(fields: [originId], references: [id])
+  createdBy User    @relation("AdProjectCreator", fields: [createdById], references: [id])
+  videos    AdVideo[]
+
+  // Indexes
+  @@index([adTypeId])
+  @@index([originId])
+  @@index([createdById])
+  @@index([status])
+  @@index([currentPhase])
+  @@map("ad_project")
+}
+
+model AdVideo {
+  id                          String              @id @default(cuid())
+  projectId                   String
+  nomeDescritivo              String              @db.VarChar(25)
+  tema                        AdVideoTema
+  estilo                      AdVideoEstilo
+  formato                     AdVideoFormato
+  roteiro                     String?             @db.Text
+  criadorId                   String?
+  storyboardUrl               String?
+  localGravacao               String?
+  dataGravacao                DateTime?
+  currentPhase                Int                 @default(1)
+  phaseStatus                 AdVideoPhaseStatus  @default(PENDENTE)
+
+  // Validacoes Fase 2
+  validacaoRoteiroCompliance  Boolean             @default(false)
+  validacaoRoteiroMedico      Boolean             @default(false)
+
+  // Aprovacoes Fase 3
+  aprovacaoElenco             Boolean             @default(false)
+  aprovacaoPreProducao        Boolean             @default(false)
+
+  // Revisoes Fase 5
+  revisaoConteudo             Boolean             @default(false)
+  revisaoDesign               Boolean             @default(false)
+  validacaoFinalCompliance    Boolean             @default(false)
+  validacaoFinalMedico        Boolean             @default(false)
+
+  // Fase 6
+  aprovacaoFinal              Boolean             @default(false)
+  linkAnuncio                 String?
+
+  // Regressao
+  rejectionReason             String?             @db.Text
+  rejectedToPhase             Int?
+
+  // Timestamps
+  createdAt                   DateTime            @default(now())
+  updatedAt                   DateTime            @updatedAt
+
+  // Relations
+  project      AdProject       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  criador      Creator?        @relation("AdVideoCriador", fields: [criadorId], references: [id])
+  deliverables AdDeliverable[]
+
+  // Indexes
+  @@index([projectId])
+  @@index([criadorId])
+  @@index([currentPhase])
+  @@index([phaseStatus])
+  @@map("ad_video")
+}
+
+model AdDeliverable {
+  id                  String                @id @default(cuid())
+  videoId             String
+  hookNumber          Int
+  adNumber            Int?
+  fileId              String
+  tempo               AdDeliverableTempo
+  tamanho             AdDeliverableTamanho
+  mostraProduto       Boolean               @default(false)
+  isPost              Boolean               @default(false)
+  versionNumber       Int                   @default(1)
+  descHook            String?               @db.Text
+  nomenclaturaGerada  String?
+  nomenclaturaEditada String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  // Relations
+  video AdVideo @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  file  File    @relation("AdDeliverableFile", fields: [fileId], references: [id])
+
+  // Constraints
+  @@unique([videoId, hookNumber])
+
+  // Indexes
+  @@index([videoId])
+  @@index([fileId])
+  @@index([adNumber])
+  @@map("ad_deliverable")
+}
+
+model AdCounter {
+  id           String   @id @default(cuid())
+  currentValue Int      @default(730)
+  updatedAt    DateTime @updatedAt
+
+  @@map("ad_counter")
+}
