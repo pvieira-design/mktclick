@@ -9,13 +9,14 @@ const listInputSchema = z.object({
   tagId: z.string().cuid().optional(),
   isArchived: z.boolean().optional(),
   search: z.string().optional(),
+  folderId: z.string().cuid().nullable().optional(),
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(100).default(20),
 });
 
 export const fileRouter = router({
   list: protectedProcedure.input(listInputSchema).query(async ({ input }) => {
-    const { type, tagId, isArchived, search, page, limit } = input;
+    const { type, tagId, isArchived, search, folderId, page, limit } = input;
     const skip = (page - 1) * limit;
 
     const where = {
@@ -32,6 +33,7 @@ export const fileRouter = router({
           { description: { contains: search, mode: "insensitive" as const } },
         ],
       }),
+      ...(folderId !== undefined && { folderId }),
     };
 
     const [items, total] = await Promise.all([

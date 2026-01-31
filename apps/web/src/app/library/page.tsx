@@ -41,6 +41,10 @@ import {
   XClose,
   Type01,
   User01,
+  Folder,
+  FolderPlus,
+  ChevronRight,
+  ArrowRight,
 } from "@untitledui/icons";
 
 interface FileItem {
@@ -76,6 +80,15 @@ interface FileItem {
     id: string;
     name: string;
   } | null;
+}
+
+interface FolderItem {
+  id: string;
+  name: string;
+  _count: {
+    children: number;
+    files: number;
+  };
 }
 
 function formatFileSize(bytes: number): string {
@@ -151,11 +164,52 @@ export default function LibraryPage() {
   const [renamePrefix, setRenamePrefix] = useState("");
   const [renameSuffix, setRenameSuffix] = useState("");
 
+  // Folder state
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [editFolder, setEditFolder] = useState<FolderItem | null>(null);
+  const [editFolderName, setEditFolderName] = useState("");
+  const [deleteFolderConfirm, setDeleteFolderConfirm] = useState<FolderItem | null>(null);
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
+  const [dragOverBreadcrumb, setDragOverBreadcrumb] = useState<string | null>(null);
+  const [isBulkMoveOpen, setIsBulkMoveOpen] = useState(false);
+  const [moveTargetFolderId, setMoveTargetFolderId] = useState<string | null>(null);
+  const [movePickerFolderId, setMovePickerFolderId] = useState<string | null>(null);
+
+  const isSearching = !!search || typeFilter !== "all" || tagFilter !== "all";
+
   const limit = 20;
 
   const { data: tagsData } = useQuery(trpc.fileTag.list.queryOptions());
   const { data: creatorsData } = useQuery(trpc.creator.list.queryOptions({ isActive: true, limit: 100 }));
   const { data: originsData } = useQuery(trpc.origin.list.queryOptions());
+
+  // Folder queries
+  const { data: foldersData } = useQuery(
+    trpc.fileFolder.list.queryOptions(
+      isSearching ? undefined : { parentId: currentFolderId ?? null }
+    )
+  );
+
+  const { data: breadcrumbsData } = useQuery({
+    ...trpc.fileFolder.getBreadcrumbs.queryOptions({ folderId: currentFolderId! }),
+    enabled: !!currentFolderId,
+  });
+
+  // Move picker queries
+  const { data: movePickerFolders } = useQuery({
+    ...trpc.fileFolder.list.queryOptions({ parentId: movePickerFolderId ?? null }),
+    enabled: isBulkMoveOpen,
+  });
+
+  const { data: movePickerBreadcrumbs } = useQuery({
+    ...trpc.fileFolder.getBreadcrumbs.queryOptions({ folderId: movePickerFolderId! }),
+    enabled: isBulkMoveOpen && !!movePickerFolderId,
+  });
+
+  const folders = (foldersData?.items ?? []) as FolderItem[];
+  const breadcrumbs = breadcrumbsData ?? [];
 
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -179,6 +233,7 @@ export default function LibraryPage() {
       type: typeFilter !== "all" ? typeFilter : undefined,
       tagId: tagFilter !== "all" ? tagFilter : undefined,
       isArchived: archivedFilter === "all" ? undefined : archivedFilter === "archived",
+      folderId: isSearching ? undefined : currentFolderId,
       page,
       limit,
     })
@@ -200,6 +255,11 @@ export default function LibraryPage() {
   useEffect(() => {
     clearSelection();
   }, [search, typeFilter, tagFilter, archivedFilter, page, clearSelection]);
+
+  // Reset page when navigating folders
+  useEffect(() => {
+    setPage(1);
+  }, [currentFolderId]);
 
   type FileUpdateInput = { id: string; name?: string; thumbnailUrl?: string | null; tagIds?: string[]; creatorId?: string | null; originId?: string | null };
 
@@ -288,6 +348,79 @@ export default function LibraryPage() {
     },
     onError: (error: Error) => {
       toast.error(`Erro ao renomear: ${error.message}`);
+    },
+  });
+
+  // Folder mutations
+  type CreateFolderInput = { name: string; parentId?: string | null };
+  const createFolderMutation = useMutation({
+    mutationFn: async (input: CreateFolderInput) => {
+      const options = trpc.fileFolder.create.mutationOptions();
+      const fn = options.mutationFn as unknown as (input: CreateFolderInput) => Promise<unknown>;
+      return fn(input);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [["fileFolder"]] });
+      toast.success("Pasta criada!");
+      setIsCreateFolderOpen(false);
+      setNewFolderName("");
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao criar pasta: ${error.message}`);
+    },
+  });
+
+  type RenameFolderInput = { id: string; name: string };
+  const renameFolderMutation = useMutation({
+    mutationFn: async (input: RenameFolderInput) => {
+      const options = trpc.fileFolder.rename.mutationOptions();
+      const fn = options.mutationFn as unknown as (input: RenameFolderInput) => Promise<unknown>;
+      return fn(input);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [["fileFolder"]] });
+      toast.success("Pasta renomeada!");
+      setEditFolder(null);
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao renomear pasta: ${error.message}`);
+    },
+  });
+
+  type DeleteFolderInput = { id: string };
+  const deleteFolderMutation = useMutation({
+    mutationFn: async (input: DeleteFolderInput) => {
+      const options = trpc.fileFolder.delete.mutationOptions();
+      const fn = options.mutationFn as unknown as (input: DeleteFolderInput) => Promise<unknown>;
+      return fn(input);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [["fileFolder"]] });
+      queryClient.invalidateQueries({ queryKey: [["file"]] });
+      toast.success("Pasta excluída! Os arquivos foram movidos para a pasta pai.");
+      setDeleteFolderConfirm(null);
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao excluir pasta: ${error.message}`);
+    },
+  });
+
+  type MoveFilesInput = { fileIds: string[]; folderId: string | null };
+  const moveFilesMutation = useMutation({
+    mutationFn: async (input: MoveFilesInput) => {
+      const options = trpc.fileFolder.moveFiles.mutationOptions();
+      const fn = options.mutationFn as unknown as (input: MoveFilesInput) => Promise<unknown>;
+      return fn(input);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [["file"]] });
+      queryClient.invalidateQueries({ queryKey: [["fileFolder"]] });
+      toast.success("Arquivos movidos!");
+      clearSelection();
+      setIsBulkMoveOpen(false);
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao mover arquivos: ${error.message}`);
     },
   });
 
@@ -418,6 +551,8 @@ export default function LibraryPage() {
     };
     updateUploadToast();
 
+    const uploadedFileIds: string[] = [];
+
     for (const file of fileArray) {
       uploadStateRef.current.currentFileName = file.name;
       uploadStateRef.current.currentProgress = 0;
@@ -431,10 +566,15 @@ export default function LibraryPage() {
           updateUploadToast();
         };
 
+        let result: { id?: string } | undefined;
         if (useR2) {
-          await uploadToR2(file, updateProgress);
+          result = await uploadToR2(file, updateProgress) as { id?: string } | undefined;
         } else {
-          await uploadFileWithMetadata(file, updateProgress);
+          result = await uploadFileWithMetadata(file, updateProgress) as { id?: string } | undefined;
+        }
+
+        if (result?.id) {
+          uploadedFileIds.push(result.id);
         }
 
         uploadStateRef.current.completedFiles++;
@@ -467,10 +607,157 @@ export default function LibraryPage() {
       toast.error(`${completedFiles} enviado${completedFiles > 1 ? "s" : ""}, ${failedFiles} ${failedFiles > 1 ? "falharam" : "falhou"}`);
     }
 
-    queryClient.invalidateQueries({ queryKey: [["file"]] });
+    // Move uploaded files to current folder
+    if (currentFolderId && uploadedFileIds.length > 0) {
+      moveFilesMutation.mutate({ fileIds: uploadedFileIds, folderId: currentFolderId });
+    } else {
+      queryClient.invalidateQueries({ queryKey: [["file"]] });
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, fileIds: string[]) => {
+    e.dataTransfer.setData("application/json", JSON.stringify(fileIds));
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDropOnFolder = (e: React.DragEvent, folderId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverFolderId(null);
+    setDragOverBreadcrumb(null);
+    try {
+      const fileIds = JSON.parse(e.dataTransfer.getData("application/json")) as string[];
+      if (fileIds.length > 0) {
+        moveFilesMutation.mutate({ fileIds, folderId });
+      }
+    } catch {
+      // ignore invalid drag data
+    }
+  };
+
+  const handleDropOnBreadcrumb = (e: React.DragEvent, folderId: string | null) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverBreadcrumb(null);
+    setDragOverFolderId(null);
+    try {
+      const fileIds = JSON.parse(e.dataTransfer.getData("application/json")) as string[];
+      if (fileIds.length > 0) {
+        moveFilesMutation.mutate({ fileIds, folderId });
+      }
+    } catch {
+      // ignore invalid drag data
+    }
   };
 
   const selectedIdsInOrder = items.filter((f) => selectedIds.has(f.id)).map((f) => f.id);
+
+  const renderFolderCard = (folder: FolderItem) => {
+    const isDropTarget = dragOverFolderId === folder.id;
+    return (
+      <div
+        key={folder.id}
+        className={`group relative flex flex-col overflow-hidden rounded-lg border bg-primary transition-colors cursor-pointer ${
+          isDropTarget ? "border-brand-primary ring-2 ring-brand-primary/20 bg-brand-primary/5" : "border-secondary hover:border-brand-primary"
+        }`}
+        onClick={() => setCurrentFolderId(folder.id)}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOverFolderId(folder.id);
+        }}
+        onDragLeave={() => setDragOverFolderId(null)}
+        onDrop={(e) => handleDropOnFolder(e, folder.id)}
+      >
+        <div className="relative aspect-square bg-secondary/50 flex flex-col items-center justify-center gap-2">
+          <Folder className="h-12 w-12 text-brand-primary" />
+          <span className="text-xs text-tertiary">
+            {folder._count.files} arquivo{folder._count.files !== 1 ? "s" : ""}
+            {folder._count.children > 0 && `, ${folder._count.children} pasta${folder._count.children !== 1 ? "s" : ""}`}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2 p-3">
+          <h3 className="font-medium text-primary truncate flex-1" title={folder.name}>
+            {folder.name}
+          </h3>
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditFolderName(folder.name);
+                setEditFolder(folder);
+              }}
+              className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-secondary transition-colors cursor-pointer"
+            >
+              <Edit05 className="h-3.5 w-3.5 text-tertiary" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteFolderConfirm(folder);
+              }}
+              className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-red-50 transition-colors cursor-pointer"
+            >
+              <Trash01 className="h-3.5 w-3.5 text-red-500" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderFolderRow = (folder: FolderItem) => {
+    const isDropTarget = dragOverFolderId === folder.id;
+    return (
+      <div
+        key={folder.id}
+        className={`flex items-center gap-4 p-4 border-b border-secondary transition-colors cursor-pointer ${
+          isDropTarget ? "bg-brand-primary/5 border-brand-primary" : "hover:bg-secondary/50"
+        }`}
+        onClick={() => setCurrentFolderId(folder.id)}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOverFolderId(folder.id);
+        }}
+        onDragLeave={() => setDragOverFolderId(null)}
+        onDrop={(e) => handleDropOnFolder(e, folder.id)}
+      >
+        <div className="flex-shrink-0 h-12 w-12 rounded-md bg-brand-primary/10 flex items-center justify-center">
+          <Folder className="h-6 w-6 text-brand-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-primary truncate">{folder.name}</h3>
+          <div className="flex items-center gap-4 text-xs text-tertiary">
+            <span>{folder._count.files} arquivo{folder._count.files !== 1 ? "s" : ""}</span>
+            {folder._count.children > 0 && (
+              <span>{folder._count.children} pasta{folder._count.children !== 1 ? "s" : ""}</span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditFolderName(folder.name);
+              setEditFolder(folder);
+            }}
+            className="h-8 w-8 rounded-md flex items-center justify-center hover:bg-secondary transition-colors cursor-pointer"
+          >
+            <Edit05 className="h-4 w-4 text-tertiary" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteFolderConfirm(folder);
+            }}
+            className="h-8 w-8 rounded-md flex items-center justify-center hover:bg-red-50 transition-colors cursor-pointer"
+          >
+            <Trash01 className="h-4 w-4 text-red-500" />
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   const renderFileCard = (file: FileItem) => {
     const Icon = getFileTypeIcon(file.mimeType);
@@ -485,6 +772,11 @@ export default function LibraryPage() {
           isSelected ? "border-brand-primary ring-2 ring-brand-primary/20" : "border-secondary hover:border-brand-primary"
         }`}
         onClick={() => setPreviewFile(file)}
+        draggable
+        onDragStart={(e) => {
+          const ids = selectedIds.has(file.id) ? Array.from(selectedIds) : [file.id];
+          handleDragStart(e, ids);
+        }}
       >
         <div className="relative aspect-square bg-secondary flex items-center justify-center overflow-hidden">
           {isImage ? (
@@ -583,6 +875,11 @@ export default function LibraryPage() {
           isSelected ? "bg-brand-primary/5" : "hover:bg-secondary/50"
         }`}
         onClick={() => setPreviewFile(file)}
+        draggable
+        onDragStart={(e) => {
+          const ids = selectedIds.has(file.id) ? Array.from(selectedIds) : [file.id];
+          handleDragStart(e, ids);
+        }}
       >
         <div
           onClick={(e) => e.stopPropagation()}
@@ -643,6 +940,9 @@ export default function LibraryPage() {
     );
   };
 
+  const movePickerFolderItems = (movePickerFolders?.items ?? []) as FolderItem[];
+  const movePickerBreadcrumbItems = movePickerBreadcrumbs ?? [];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -663,11 +963,64 @@ export default function LibraryPage() {
               {isImportingFromDrive ? "Importando..." : "Importar do Drive"}
             </Button>
           )}
+          <Button
+            color="secondary"
+            iconLeading={FolderPlus}
+            onClick={() => {
+              setNewFolderName("");
+              setIsCreateFolderOpen(true);
+            }}
+          >
+            Nova Pasta
+          </Button>
           <Button iconLeading={Plus} onClick={() => setIsUploadOpen(true)}>
             Upload
           </Button>
         </div>
       </div>
+
+      {/* Breadcrumb Navigation */}
+      {(currentFolderId || breadcrumbs.length > 0) && (
+        <div className="flex items-center gap-1 text-sm">
+          <button
+            onClick={() => setCurrentFolderId(null)}
+            className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
+              dragOverBreadcrumb === "root" ? "bg-brand-primary/10 text-brand-primary" : "text-tertiary hover:text-primary hover:bg-secondary"
+            }`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOverBreadcrumb("root");
+            }}
+            onDragLeave={() => setDragOverBreadcrumb(null)}
+            onDrop={(e) => handleDropOnBreadcrumb(e, null)}
+          >
+            Biblioteca
+          </button>
+          {breadcrumbs.map((crumb) => (
+            <div key={crumb.id} className="flex items-center gap-1">
+              <ChevronRight className="h-4 w-4 text-quaternary" />
+              <button
+                onClick={() => setCurrentFolderId(crumb.id)}
+                className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
+                  dragOverBreadcrumb === crumb.id
+                    ? "bg-brand-primary/10 text-brand-primary"
+                    : crumb.id === currentFolderId
+                      ? "text-primary font-medium"
+                      : "text-tertiary hover:text-primary hover:bg-secondary"
+                }`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOverBreadcrumb(crumb.id);
+                }}
+                onDragLeave={() => setDragOverBreadcrumb(null)}
+                onDrop={(e) => handleDropOnBreadcrumb(e, crumb.id)}
+              >
+                {crumb.name}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-4">
         <div onClick={(e) => e.stopPropagation()}>
@@ -776,19 +1129,23 @@ export default function LibraryPage() {
             />
           ))}
         </div>
-      ) : items.length === 0 ? (
+      ) : !isSearching && folders.length === 0 && items.length === 0 ? (
         <div className="text-center py-12 border border-dashed border-secondary rounded-lg">
-          <p className="text-tertiary">Nenhum arquivo encontrado</p>
+          <p className="text-tertiary">
+            {currentFolderId ? "Esta pasta está vazia" : "Nenhum arquivo encontrado"}
+          </p>
           <p className="text-sm text-tertiary mt-1">
-            Faça upload de arquivos para começar
+            {currentFolderId ? "Faça upload ou mova arquivos para esta pasta" : "Faça upload de arquivos para começar"}
           </p>
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4" data-testid="file-grid">
+          {!isSearching && folders.map(renderFolderCard)}
           {items.map(renderFileCard)}
         </div>
       ) : (
         <div className="border border-secondary rounded-lg overflow-hidden" data-testid="file-list">
+          {!isSearching && folders.map(renderFolderRow)}
           {items.map(renderFileRow)}
         </div>
       )}
@@ -876,6 +1233,18 @@ export default function LibraryPage() {
               >
                 <Type01 className="h-4 w-4" />
                 <span>Renomear</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setMoveTargetFolderId(null);
+                  setMovePickerFolderId(null);
+                  setIsBulkMoveOpen(true);
+                }}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <ArrowRight className="h-4 w-4" />
+                <span>Mover</span>
               </button>
 
               <div className="h-6 w-px bg-white/20 mx-1" />
@@ -1239,6 +1608,199 @@ export default function LibraryPage() {
                 isDisabled={bulkArchiveMutation.isPending}
               >
                 {bulkArchiveMutation.isPending ? "Arquivando..." : "Arquivar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Move Dialog */}
+      <Dialog open={isBulkMoveOpen} onOpenChange={setIsBulkMoveOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mover Arquivos</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-tertiary">
+              Mover {selectedIds.size} arquivo(s) para:
+            </p>
+
+            {/* Move picker breadcrumbs */}
+            <div className="flex items-center gap-1 text-sm">
+              <button
+                onClick={() => {
+                  setMovePickerFolderId(null);
+                  setMoveTargetFolderId(null);
+                }}
+                className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
+                  movePickerFolderId === null ? "text-primary font-medium" : "text-tertiary hover:text-primary hover:bg-secondary"
+                }`}
+              >
+                Raiz
+              </button>
+              {movePickerBreadcrumbItems.map((crumb) => (
+                <div key={crumb.id} className="flex items-center gap-1">
+                  <ChevronRight className="h-4 w-4 text-quaternary" />
+                  <button
+                    onClick={() => {
+                      setMovePickerFolderId(crumb.id);
+                      setMoveTargetFolderId(crumb.id);
+                    }}
+                    className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
+                      crumb.id === movePickerFolderId ? "text-primary font-medium" : "text-tertiary hover:text-primary hover:bg-secondary"
+                    }`}
+                  >
+                    {crumb.name}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Folder list */}
+            <div className="border border-secondary rounded-lg max-h-64 overflow-y-auto">
+              {movePickerFolderItems.length === 0 ? (
+                <div className="p-4 text-center text-sm text-tertiary">
+                  Nenhuma subpasta aqui
+                </div>
+              ) : (
+                movePickerFolderItems.map((folder) => (
+                  <button
+                    key={folder.id}
+                    onClick={() => {
+                      setMovePickerFolderId(folder.id);
+                      setMoveTargetFolderId(folder.id);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 border-b border-secondary last:border-b-0 transition-colors cursor-pointer text-left ${
+                      moveTargetFolderId === folder.id ? "bg-brand-primary/5" : "hover:bg-secondary/50"
+                    }`}
+                  >
+                    <Folder className="h-5 w-5 text-brand-primary flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-primary truncate">{folder.name}</p>
+                      <p className="text-xs text-tertiary">
+                        {folder._count.files} arquivo{folder._count.files !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-quaternary flex-shrink-0" />
+                  </button>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button color="secondary" onClick={() => setIsBulkMoveOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  moveFilesMutation.mutate({
+                    fileIds: Array.from(selectedIds),
+                    folderId: moveTargetFolderId,
+                  });
+                }}
+                isDisabled={moveFilesMutation.isPending}
+              >
+                {moveFilesMutation.isPending ? "Movendo..." : `Mover para ${moveTargetFolderId ? "pasta" : "raiz"}`}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Folder Dialog */}
+      <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nova Pasta</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-1.5">Nome da pasta</label>
+              <Input
+                aria-label="Nome da pasta"
+                value={newFolderName}
+                onChange={(value) => setNewFolderName(value)}
+                placeholder="ex: Referências"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button color="secondary" onClick={() => setIsCreateFolderOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() =>
+                  createFolderMutation.mutate({
+                    name: newFolderName,
+                    parentId: currentFolderId,
+                  })
+                }
+                isDisabled={!newFolderName.trim() || createFolderMutation.isPending}
+              >
+                {createFolderMutation.isPending ? "Criando..." : "Criar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Folder Dialog */}
+      <Dialog open={!!editFolder} onOpenChange={(open) => !open && setEditFolder(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Renomear Pasta</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-1.5">Nome</label>
+              <Input
+                aria-label="Nome da pasta"
+                value={editFolderName}
+                onChange={(value) => setEditFolderName(value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button color="secondary" onClick={() => setEditFolder(null)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  if (editFolder) {
+                    renameFolderMutation.mutate({ id: editFolder.id, name: editFolderName });
+                  }
+                }}
+                isDisabled={!editFolderName.trim() || renameFolderMutation.isPending}
+              >
+                {renameFolderMutation.isPending ? "Renomeando..." : "Renomear"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Folder Confirmation Dialog */}
+      <Dialog open={!!deleteFolderConfirm} onOpenChange={(open) => !open && setDeleteFolderConfirm(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir Pasta</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-tertiary">
+              Tem certeza que deseja excluir a pasta &ldquo;{deleteFolderConfirm?.name}&rdquo;? Os arquivos dentro dela serão movidos para a pasta pai.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button color="secondary" onClick={() => setDeleteFolderConfirm(null)}>
+                Cancelar
+              </Button>
+              <Button
+                color="primary-destructive"
+                onClick={() => {
+                  if (deleteFolderConfirm) {
+                    deleteFolderMutation.mutate({ id: deleteFolderConfirm.id });
+                  }
+                }}
+                isDisabled={deleteFolderMutation.isPending}
+              >
+                {deleteFolderMutation.isPending ? "Excluindo..." : "Excluir"}
               </Button>
             </div>
           </div>
