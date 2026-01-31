@@ -1,8 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/base/buttons/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TEMPO_LABELS, TAMANHO_LABELS } from "../ad-constants";
 import { NomenclaturaCopy } from "../nomenclatura/nomenclatura-copy";
 import { trpc } from "@/utils/trpc";
@@ -20,6 +31,7 @@ export function DeliverableCard({
   onRefresh,
 }: DeliverableCardProps) {
   const queryClient = useQueryClient();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const deleteMutation = useMutation({
     ...trpc.adDeliverable.delete.mutationOptions(),
@@ -69,11 +81,28 @@ export function DeliverableCard({
             size="sm"
             color="tertiary-destructive"
             iconLeading={Trash01}
-            onClick={() => deleteMutation.mutate({ id: deliverable.id })}
+            onClick={() => setShowDeleteDialog(true)}
             isDisabled={deleteMutation.isPending}
           />
         )}
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={(open) => !open && setShowDeleteDialog(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover hook HK{deliverable.hookNumber}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acao nao pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteMutation.mutate({ id: deliverable.id })}>
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
