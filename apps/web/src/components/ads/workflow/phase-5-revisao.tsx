@@ -233,7 +233,7 @@ export function Phase5Revisao({ project, onRefresh }: Phase5RevisaoProps) {
             onClick={() => advancePhase.mutate({ id: project.id })}
             isDisabled={advancePhase.isPending}
           >
-            Avancar para Fase 6
+            {advancePhase.isPending ? "Avancando..." : "Avancar para Fase 6"}
           </Button>
         </div>
       )}

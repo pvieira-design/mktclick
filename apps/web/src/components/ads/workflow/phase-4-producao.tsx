@@ -110,7 +110,7 @@ export function Phase4Producao({ project, onRefresh }: Phase4ProducaoProps) {
                     }
                     isDisabled={updatePhaseStatus.isPending}
                   >
-                    Marcar como Entregue
+                    {updatePhaseStatus.isPending ? "Marcando..." : "Marcar como Entregue"}
                   </Button>
                 </div>
               )}
@@ -126,7 +126,7 @@ export function Phase4Producao({ project, onRefresh }: Phase4ProducaoProps) {
             onClick={() => advancePhase.mutate({ id: project.id })}
             isDisabled={advancePhase.isPending}
           >
-            Avancar para Fase 5
+            {advancePhase.isPending ? "Avancando..." : "Avancar para Fase 5"}
           </Button>
         </div>
       )}

@@ -105,6 +105,8 @@ export function Phase6Publicacao({ project, onRefresh }: Phase6PublicacaoProps) 
               setLinkAnuncio.isPending ||
               updatePhaseStatus.isPending
             }
+            isApprovePending={approvePhase6.isPending}
+            isPublishPending={updatePhaseStatus.isPending}
           />
         ))}
       </div>
@@ -123,6 +125,8 @@ function VideoPublicacaoCard({
   onRegenerateNomenclatura,
   onRefresh,
   isPending,
+  isApprovePending,
+  isPublishPending,
 }: {
   video: any;
   index: number;
@@ -134,6 +138,8 @@ function VideoPublicacaoCard({
   onRegenerateNomenclatura: () => void;
   onRefresh: () => void;
   isPending: boolean;
+  isApprovePending: boolean;
+  isPublishPending: boolean;
 }) {
   const [linkInput, setLinkInput] = useState(video.linkAnuncio || "");
 
@@ -187,7 +193,7 @@ function VideoPublicacaoCard({
               onClick={onApprove}
               isDisabled={isPending}
             >
-              Aprovar e Atribuir AD Numbers
+              {isApprovePending ? "Aprovando..." : "Aprovar e Atribuir AD Numbers"}
             </Button>
           )}
         </div>
@@ -268,7 +274,7 @@ function VideoPublicacaoCard({
                   onClick={onMarkPublished}
                   isDisabled={isPending}
                 >
-                  Marcar como Publicado
+                  {isPublishPending ? "Publicando..." : "Marcar como Publicado"}
                 </Button>
               )}
             </div>
