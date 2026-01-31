@@ -105,11 +105,12 @@ export const creatorRouter = router({
       z.object({
         name: z.string().min(2).max(100),
         imageUrl: z.string().url().optional().or(z.literal("")),
+        imageFileId: z.string().cuid().optional(),
         email: z.string().email().optional().or(z.literal("")),
         phone: z.string().optional(),
         instagram: z.string().optional(),
         type: z.nativeEnum(CreatorType),
-        responsibleId: z.string().cuid(),
+        responsibleId: z.string().min(1),
         contractStartDate: z.coerce.date().optional(),
         contractEndDate: z.coerce.date().optional(),
         notes: z.string().optional(),
@@ -165,6 +166,13 @@ export const creatorRouter = router({
         },
       });
 
+      if (input.imageFileId) {
+        await db.file.update({
+          where: { id: input.imageFileId },
+          data: { creatorId: creator.id },
+        });
+      }
+
       return creator;
     }),
 
@@ -178,7 +186,7 @@ export const creatorRouter = router({
         phone: z.string().optional().nullable(),
         instagram: z.string().optional().nullable(),
         type: z.nativeEnum(CreatorType).optional(),
-        responsibleId: z.string().cuid().optional(),
+        responsibleId: z.string().min(1).optional(),
         contractStartDate: z.coerce.date().optional().nullable(),
         contractEndDate: z.coerce.date().optional().nullable(),
         notes: z.string().optional().nullable(),

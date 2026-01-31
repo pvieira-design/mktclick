@@ -29,7 +29,7 @@ export default function EditAreaPage() {
   const updateMutation = useMutation({
     ...(trpc.area.update.mutationOptions as any)(),
     onSuccess: () => {
-      toast.success("Area updated successfully");
+       toast.success("Área atualizada com sucesso");
       router.push("/admin/areas" as any);
     },
     onError: (error: Error) => {
@@ -92,52 +92,52 @@ export default function EditAreaPage() {
           <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Edit Area</h1>
-          <p className="text-muted-foreground">Update area properties.</p>
+           <h1 className="text-2xl font-bold tracking-tight">Editar Área</h1>
+           <p className="text-muted-foreground">Atualize as propriedades da área.</p>
         </div>
       </div>
 
       <Card>
         <form onSubmit={handleSubmit}>
-          <CardHeader>
-            <CardTitle>Area Details</CardTitle>
-            <CardDescription>
-              Modify the properties for this area.
-            </CardDescription>
-          </CardHeader>
+           <CardHeader>
+             <CardTitle>Detalhes da Área</CardTitle>
+             <CardDescription>
+               Modifique as propriedades desta área.
+             </CardDescription>
+           </CardHeader>
           <CardContent className="space-y-4">
-            <Input 
-              label="Name"
-              value={name} 
-              onChange={(value) => setName(value)} 
-              placeholder="e.g. Design Team" 
-              isRequired 
-            />
+             <Input 
+               label="Nome"
+               value={name} 
+               onChange={(value) => setName(value)} 
+               placeholder="Ex: Equipe de Design" 
+               isRequired 
+             />
             
-            <Input 
-              label="Slug"
-              value={slug} 
-              onChange={(value) => setSlug(value)} 
-              placeholder="e.g. design-team" 
-              isRequired 
-              hint="Unique identifier used in URLs and API calls."
-            />
+             <Input 
+               label="Slug"
+               value={slug} 
+               onChange={(value) => setSlug(value)} 
+               placeholder="ex: equipe-design" 
+               isRequired 
+               hint="Identificador único usado em URLs e chamadas de API."
+             />
 
-            <TextArea 
-              label="Description"
-              value={description} 
-              onChange={(value) => setDescription(value)} 
-              placeholder="Describe what this area is responsible for..." 
-              rows={3}
-            />
+             <TextArea 
+               label="Descrição"
+               value={description} 
+               onChange={(value) => setDescription(value)} 
+               placeholder="Descreva as responsabilidades desta área..." 
+               rows={3}
+             />
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Link 
               href={"/admin/areas" as any}
             >
-              <Button color="secondary">
-                Cancel
-              </Button>
+               <Button color="secondary">
+                 Cancelar
+               </Button>
             </Link>
             <Button 
               type="submit" 
@@ -145,7 +145,7 @@ export default function EditAreaPage() {
               isLoading={updateMutation.isPending}
               iconLeading={Save01}
             >
-              Save Changes
+               Salvar Alterações
             </Button>
           </CardFooter>
         </form>

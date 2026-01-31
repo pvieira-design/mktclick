@@ -264,7 +264,7 @@ export function NewRequestDrawer({ open, onOpenChange }: NewRequestDrawerProps) 
                     <label className="text-sm font-medium text-secondary mb-1.5 block">
                       Prazo (opcional)
                     </label>
-                    <DatePicker value={deadline} onChange={setDeadline} />
+                    <DatePicker aria-label="Prazo" value={deadline} onChange={setDeadline} />
                   </div>
                 </div>
 

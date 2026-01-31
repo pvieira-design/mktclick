@@ -1,10 +1,11 @@
 "use client";
 
-import { LogOut, User } from "lucide-react";
+import { LogOut01, User01 } from "@untitledui/icons";
 import { useRouter } from "next/navigation";
 
 import { authClient } from "@/lib/auth-client";
-import { Button } from "./ui/button";
+import { Button } from "@/components/base/buttons/button";
+import { Avatar } from "@/components/base/avatar/avatar";
 import { Skeleton } from "./ui/skeleton";
 
 type Session = typeof authClient.$Infer.Session;
@@ -18,7 +19,7 @@ export function ProfileWidget({ session }: ProfileWidgetProps) {
 
   if (!session) {
     return (
-      <div className="space-y-2 p-2">
+      <div className="space-y-2 p-3">
         <Skeleton className="h-8 w-full" />
         <Skeleton className="h-4 w-3/4" />
       </div>
@@ -37,25 +38,23 @@ export function ProfileWidget({ session }: ProfileWidgetProps) {
   };
 
   return (
-    <div className="border-t p-3">
+    <div className="p-3">
       <div className="flex items-center gap-3">
-        <div className="flex size-9 items-center justify-center rounded-full bg-muted">
-          <User className="size-4 text-muted-foreground" />
-        </div>
+        <Avatar size="md" placeholderIcon={User01} />
         <div className="flex-1 overflow-hidden">
-          <p className="truncate text-sm font-medium">{session.user.name}</p>
-          <p className="truncate text-xs text-muted-foreground">
+          <p className="truncate text-sm font-semibold text-primary">{session.user.name}</p>
+          <p className="truncate text-xs text-tertiary">
             {session.user.email}
           </p>
         </div>
       </div>
       <Button
-        variant="ghost"
+        color="tertiary"
         size="sm"
-        className="mt-3 w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+        className="mt-3 w-full justify-start"
         onClick={handleSignOut}
+        iconLeading={LogOut01}
       >
-        <LogOut className="size-4" />
         Sair
       </Button>
     </div>

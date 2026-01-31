@@ -27,17 +27,17 @@ import { toast } from "sonner";
 import { Plus, Edit01, Trash01, ChevronUp, ChevronDown } from "@untitledui/icons";
 
 const fieldTypes = [
-  { value: "TEXT", label: "Text", description: "Single line text input" },
-  { value: "TEXTAREA", label: "Text Area", description: "Multi-line text input" },
-  { value: "WYSIWYG", label: "Rich Text", description: "Rich text editor (WYSIWYG)" },
-  { value: "FILE", label: "File Upload", description: "File attachment" },
-  { value: "DATE", label: "Date", description: "Date picker" },
-  { value: "DATETIME", label: "Date & Time", description: "Date and time picker" },
-  { value: "SELECT", label: "Select", description: "Dropdown selection" },
-  { value: "NUMBER", label: "Number", description: "Numeric input" },
-  { value: "CHECKBOX", label: "Checkbox", description: "Boolean yes/no" },
-  { value: "URL", label: "URL", description: "Web link" },
-  { value: "AD_REFERENCE", label: "Ad Reference", description: "Reference to ad (coming soon)", disabled: true },
+  { value: "TEXT", label: "Texto", description: "Campo de texto de linha única" },
+  { value: "TEXTAREA", label: "Área de Texto", description: "Campo de texto multilinha" },
+  { value: "WYSIWYG", label: "Texto Rico", description: "Editor de texto rico (WYSIWYG)" },
+  { value: "FILE", label: "Upload de Arquivo", description: "Anexo de arquivo" },
+  { value: "DATE", label: "Data", description: "Seletor de data" },
+  { value: "DATETIME", label: "Data e Hora", description: "Seletor de data e hora" },
+  { value: "SELECT", label: "Seleção", description: "Lista suspensa" },
+  { value: "NUMBER", label: "Número", description: "Campo numérico" },
+  { value: "CHECKBOX", label: "Checkbox", description: "Sim/Não" },
+  { value: "URL", label: "URL", description: "Link web" },
+  { value: "AD_REFERENCE", label: "Referência de Anúncio", description: "Referência a anúncio (em breve)", disabled: true },
 ];
 
 interface Field {
@@ -91,34 +91,34 @@ export default function ContentTypeFieldsPage() {
     trpc.contentTypeField.listByContentType.queryOptions({ contentTypeId })
   );
 
-  const createFieldMutation = useMutation({
-    ...(trpc.contentTypeField.create.mutationOptions as any)(),
-    onSuccess: () => {
-      toast.success("Field created successfully");
-      queryClient.invalidateQueries({ queryKey: [["contentTypeField", "listByContentType"]] });
-      closeDialog();
-    },
-    onError: (error: Error) => toast.error(`Error: ${error.message}`),
-  });
+   const createFieldMutation = useMutation({
+     ...(trpc.contentTypeField.create.mutationOptions as any)(),
+     onSuccess: () => {
+       toast.success("Campo criado com sucesso");
+       queryClient.invalidateQueries({ queryKey: [["contentTypeField", "listByContentType"]] });
+       closeDialog();
+     },
+     onError: (error: Error) => toast.error(`Error: ${error.message}`),
+   });
 
-  const updateFieldMutation = useMutation({
-    ...(trpc.contentTypeField.update.mutationOptions as any)(),
-    onSuccess: () => {
-      toast.success("Field updated successfully");
-      queryClient.invalidateQueries({ queryKey: [["contentTypeField", "listByContentType"]] });
-      closeDialog();
-    },
-    onError: (error: Error) => toast.error(`Error: ${error.message}`),
-  });
+   const updateFieldMutation = useMutation({
+     ...(trpc.contentTypeField.update.mutationOptions as any)(),
+     onSuccess: () => {
+       toast.success("Campo atualizado com sucesso");
+       queryClient.invalidateQueries({ queryKey: [["contentTypeField", "listByContentType"]] });
+       closeDialog();
+     },
+     onError: (error: Error) => toast.error(`Error: ${error.message}`),
+   });
 
-  const deleteFieldMutation = useMutation({
-    ...(trpc.contentTypeField.delete.mutationOptions as any)(),
-    onSuccess: (result: { deleted: boolean; deactivated: boolean }) => {
-      toast.success(result.deleted ? "Field deleted" : "Field deactivated");
-      queryClient.invalidateQueries({ queryKey: [["contentTypeField", "listByContentType"]] });
-    },
-    onError: (error: Error) => toast.error(`Error: ${error.message}`),
-  });
+   const deleteFieldMutation = useMutation({
+     ...(trpc.contentTypeField.delete.mutationOptions as any)(),
+     onSuccess: (result: { deleted: boolean; deactivated: boolean }) => {
+       toast.success(result.deleted ? "Campo excluído" : "Campo desativado");
+       queryClient.invalidateQueries({ queryKey: [["contentTypeField", "listByContentType"]] });
+     },
+     onError: (error: Error) => toast.error(`Error: ${error.message}`),
+   });
 
   const reorderFieldsMutation = useMutation({
     ...(trpc.contentTypeField.reorder.mutationOptions as any)(),
@@ -232,14 +232,14 @@ export default function ContentTypeFieldsPage() {
       <div className="rounded-xl bg-primary shadow-xs ring-1 ring-border-secondary">
         <div className="flex items-center justify-between px-6 pt-6">
           <div>
-            <h2 className="text-lg font-semibold text-primary">Custom Fields</h2>
-            <p className="text-sm text-tertiary mt-1">
-              {fields.length} field(s) configured. Drag to reorder.
-            </p>
+           <h2 className="text-lg font-semibold text-primary">Campos Personalizados</h2>
+             <p className="text-sm text-tertiary mt-1">
+               {fields.length} campo(s) configurado(s). Arraste para reordenar.
+             </p>
           </div>
-          <Button onClick={openCreateDialog} iconLeading={Plus}>
-            Add Field
-          </Button>
+           <Button onClick={openCreateDialog} iconLeading={Plus}>
+             Adicionar Campo
+           </Button>
         </div>
         <div className="px-6 pb-6 pt-4">
           {isLoading ? (
@@ -276,7 +276,7 @@ export default function ContentTypeFieldsPage() {
                      <div className="flex items-center gap-2 flex-wrap">
                        <span className="font-medium">{field.label}</span>
                        <Badge color="gray" type="pill-color" size="sm">{field.name}</Badge>
-                       {field.required && <Badge color="gray" size="sm">Required</Badge>}
+                        {field.required && <Badge color="gray" size="sm">Obrigatório</Badge>}
                        {field.assignedStep ? (
                          <Badge color="brand" size="sm">{field.assignedStep.name}</Badge>
                        ) : (
@@ -308,78 +308,78 @@ export default function ContentTypeFieldsPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-tertiary">
-              No fields configured yet. Add a field to get started.
-            </div>
+             <div className="text-center py-8 text-tertiary">
+               Nenhum campo configurado. Adicione um para começar.
+             </div>
           )}
         </div>
       </div>
 
-      <AlertDialog open={!!fieldToDelete} onOpenChange={(open) => !open && setFieldToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete field?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove "{fieldToDelete?.label}" from this content type.
-              If requests already use this field, it will be deactivated instead.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+       <AlertDialog open={!!fieldToDelete} onOpenChange={(open) => !open && setFieldToDelete(null)}>
+         <AlertDialogContent>
+           <AlertDialogHeader>
+             <AlertDialogTitle>Excluir campo?</AlertDialogTitle>
+             <AlertDialogDescription>
+               Isso removerá "{fieldToDelete?.label}" deste tipo de conteúdo.
+               Se requests já utilizam este campo, ele será desativado.
+             </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+             <AlertDialogCancel>Cancelar</AlertDialogCancel>
+             <AlertDialogAction onClick={handleDelete}>
+               Excluir
+             </AlertDialogAction>
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
 
       <SlideoutMenu isOpen={isDialogOpen} onOpenChange={setIsDialogOpen}>
         {({ close }) => (
           <>
             <SlideoutMenu.Header onClose={close}>
               <div className="flex items-start gap-4 pr-8">
-                <FeaturedIcon icon={editingField ? Edit01 : Plus} theme="light" color="brand" size="md" />
-                <div>
-                  <h2 className="text-lg font-semibold text-primary">
-                    {editingField ? "Edit Field" : "Add Field"}
-                  </h2>
-                  <p className="text-sm text-tertiary mt-1">
-                    {editingField 
-                      ? "Update the field properties." 
-                      : "Configure a new field for this content type."}
-                  </p>
-                </div>
+                 <FeaturedIcon icon={editingField ? Edit01 : Plus} theme="light" color="brand" size="md" />
+                 <div>
+                   <h2 className="text-lg font-semibold text-primary">
+                     {editingField ? "Editar Campo" : "Adicionar Campo"}
+                   </h2>
+                   <p className="text-sm text-tertiary mt-1">
+                     {editingField 
+                       ? "Atualize as propriedades do campo." 
+                       : "Configure um novo campo para este tipo de conteúdo."}
+                   </p>
+                 </div>
               </div>
             </SlideoutMenu.Header>
 
             <SlideoutMenu.Content>
               <form id="field-form" onSubmit={handleSubmit} className="space-y-4">
-                {!editingField && (
-                  <Input
-                    label="Field Name"
-                    value={formData.name}
-                    onChange={(value) => setFormData({ ...formData, name: value })}
-                    placeholder="field_name"
-                    hint="Lowercase letters, numbers, underscores. Cannot be changed later."
-                    isRequired
-                    {...{ pattern: "^[a-z][a-z0-9_]*$" }}
-                  />
-                )}
+                 {!editingField && (
+                   <Input
+                     label="Nome do Campo"
+                     value={formData.name}
+                     onChange={(value) => setFormData({ ...formData, name: value })}
+                     placeholder="field_name"
+                     hint="Letras minúsculas, números e underscores. Não pode ser alterado depois."
+                     isRequired
+                     {...{ pattern: "^[a-z][a-z0-9_]*$" }}
+                   />
+                 )}
 
-                <Input
-                  label="Display Label"
-                  value={formData.label}
-                  onChange={(value) => setFormData({ ...formData, label: value })}
-                  placeholder="Field Label"
-                  isRequired
-                />
+                 <Input
+                   label="Rótulo de Exibição"
+                   value={formData.label}
+                   onChange={(value) => setFormData({ ...formData, label: value })}
+                   placeholder="Rótulo do Campo"
+                   isRequired
+                 />
 
-                {!editingField && (
-                  <Select
-                    label="Field Type"
-                    selectedKey={formData.fieldType}
-                    onSelectionChange={(key) => setFormData({ ...formData, fieldType: key as string })}
-                  >
+                 {!editingField && (
+                   <Select
+                     label="Tipo do Campo"
+                     selectedKey={formData.fieldType}
+                     onSelectionChange={(key) => setFormData({ ...formData, fieldType: key as string })}
+                   >
                     {fieldTypes.map((type) => (
                       <Select.Item 
                         key={type.value} 
@@ -391,63 +391,63 @@ export default function ContentTypeFieldsPage() {
                   </Select>
                 )}
 
-                {formData.fieldType === "SELECT" && (
-                  <TextArea
-                    label="Options"
-                    value={formData.options}
-                    onChange={(value) => setFormData({ ...formData, options: value })}
-                    placeholder="Option 1&#10;Option 2&#10;Option 3"
-                    rows={4}
-                    hint="One option per line."
-                  />
-                )}
+                 {formData.fieldType === "SELECT" && (
+                   <TextArea
+                     label="Opções"
+                     value={formData.options}
+                     onChange={(value) => setFormData({ ...formData, options: value })}
+                     placeholder="Opção 1&#10;Opção 2&#10;Opção 3"
+                     rows={4}
+                     hint="Uma opção por linha."
+                   />
+                 )}
 
-                {["TEXT", "TEXTAREA", "URL"].includes(formData.fieldType) && (
-                  <Input
-                    label="Placeholder"
-                    value={formData.placeholder}
-                    onChange={(value) => setFormData({ ...formData, placeholder: value })}
-                    placeholder="Enter placeholder text..."
-                  />
-                )}
+                 {["TEXT", "TEXTAREA", "URL"].includes(formData.fieldType) && (
+                   <Input
+                     label="Placeholder"
+                     value={formData.placeholder}
+                     onChange={(value) => setFormData({ ...formData, placeholder: value })}
+                     placeholder="Texto de placeholder..."
+                   />
+                 )}
 
-                <Input
-                  label="Help Text"
-                  value={formData.helpText}
-                  onChange={(value) => setFormData({ ...formData, helpText: value })}
-                  placeholder="Additional instructions for users..."
-                />
+                 <Input
+                   label="Texto de Ajuda"
+                   value={formData.helpText}
+                   onChange={(value) => setFormData({ ...formData, helpText: value })}
+                   placeholder="Instruções adicionais para os usuários..."
+                 />
 
-                <Input
-                  label="Default Value"
-                  value={formData.defaultValue}
-                  onChange={(value) => setFormData({ ...formData, defaultValue: value })}
-                  placeholder="Default value for this field"
-                />
+                 <Input
+                   label="Valor Padrão"
+                   value={formData.defaultValue}
+                   onChange={(value) => setFormData({ ...formData, defaultValue: value })}
+                   placeholder="Valor padrão deste campo"
+                 />
 
-                <Checkbox
-                  label="Required field"
-                  isSelected={formData.required}
-                  onChange={(checked) => 
-                    setFormData({ ...formData, required: checked === true })
-                  }
-                />
+                 <Checkbox
+                   label="Campo obrigatório"
+                   isSelected={formData.required}
+                   onChange={(checked) => 
+                     setFormData({ ...formData, required: checked === true })
+                   }
+                 />
               </form>
             </SlideoutMenu.Content>
 
-            <SlideoutMenu.Footer className="flex items-center justify-end gap-3">
-              <Button type="button" color="secondary" onClick={close}>
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                form="field-form"
-                isDisabled={createFieldMutation.isPending || updateFieldMutation.isPending}
-                isLoading={createFieldMutation.isPending || updateFieldMutation.isPending}
-              >
-                {editingField ? "Save Changes" : "Add Field"}
-              </Button>
-            </SlideoutMenu.Footer>
+             <SlideoutMenu.Footer className="flex items-center justify-end gap-3">
+               <Button type="button" color="secondary" onClick={close}>
+                 Cancelar
+               </Button>
+               <Button 
+                 type="submit"
+                 form="field-form"
+                 isDisabled={createFieldMutation.isPending || updateFieldMutation.isPending}
+                 isLoading={createFieldMutation.isPending || updateFieldMutation.isPending}
+               >
+                 {editingField ? "Salvar Alterações" : "Adicionar Campo"}
+               </Button>
+             </SlideoutMenu.Footer>
           </>
         )}
       </SlideoutMenu>

@@ -29,8 +29,8 @@ export default function EditOriginPage() {
   const updateMutation = useMutation({
     ...(trpc.origin.update.mutationOptions as any)(),
     onSuccess: () => {
-      toast.success("Origin updated successfully");
-      router.push("/admin/origins" as any);
+       toast.success("Origem atualizada com sucesso");
+       router.push("/admin/origins" as any);
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`);
@@ -91,62 +91,62 @@ export default function EditOriginPage() {
         >
           <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Edit Origin</h1>
-          <p className="text-muted-foreground">Update origin properties.</p>
-        </div>
+         <div>
+           <h1 className="text-2xl font-bold tracking-tight">Editar Origem</h1>
+           <p className="text-muted-foreground">Atualize as propriedades da origem.</p>
+         </div>
       </div>
 
       <Card>
         <form onSubmit={handleSubmit}>
-          <CardHeader>
-            <CardTitle>Origin Details</CardTitle>
-            <CardDescription>
-              Modify the properties for this origin.
-            </CardDescription>
-          </CardHeader>
+           <CardHeader>
+             <CardTitle>Detalhes da Origem</CardTitle>
+             <CardDescription>
+               Modifique as propriedades desta origem.
+             </CardDescription>
+           </CardHeader>
           <CardContent className="space-y-4">
-            <Input 
-              label="Name"
-              value={name} 
-              onChange={(value) => setName(value)} 
-              placeholder="e.g. Internal Team" 
-              isRequired 
-            />
+             <Input 
+               label="Nome"
+               value={name} 
+               onChange={(value) => setName(value)} 
+               placeholder="Ex: Equipe Interna" 
+               isRequired 
+             />
             
-            <Input 
-              label="Slug"
-              value={slug} 
-              onChange={(value) => setSlug(value)} 
-              placeholder="e.g. internal-team" 
-              isRequired 
-              hint="Unique identifier used in URLs and API calls."
-            />
+             <Input 
+               label="Slug"
+               value={slug} 
+               onChange={(value) => setSlug(value)} 
+               placeholder="ex: equipe-interna" 
+               isRequired 
+               hint="Identificador único usado em URLs e chamadas de API."
+             />
 
-            <TextArea 
-              label="Description"
-              value={description} 
-              onChange={(value) => setDescription(value)} 
-              placeholder="Describe what this origin represents..." 
-              rows={3}
-            />
+             <TextArea 
+               label="Descrição"
+               value={description} 
+               onChange={(value) => setDescription(value)} 
+               placeholder="Descreva o que esta origem representa..." 
+               rows={3}
+             />
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
-            <Link 
-              href={"/admin/origins" as any}
-            >
-              <Button color="secondary">
-                Cancel
-              </Button>
-            </Link>
-            <Button 
-              type="submit" 
-              isDisabled={updateMutation.isPending}
-              isLoading={updateMutation.isPending}
-              iconLeading={Save01}
-            >
-              Save Changes
-            </Button>
+             <Link 
+               href={"/admin/origins" as any}
+             >
+               <Button color="secondary">
+                 Cancelar
+               </Button>
+             </Link>
+             <Button 
+               type="submit" 
+               isDisabled={updateMutation.isPending}
+               isLoading={updateMutation.isPending}
+               iconLeading={Save01}
+             >
+               Salvar Alterações
+             </Button>
           </CardFooter>
         </form>
       </Card>

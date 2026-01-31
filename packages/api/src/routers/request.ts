@@ -180,7 +180,13 @@ export const requestRouter = router({
         include: {
           contentType: {
             include: {
-              fields: { where: { isActive: true }, orderBy: { order: "asc" } },
+              fields: {
+                where: { isActive: true },
+                orderBy: { order: "asc" },
+                include: {
+                  assignedStep: { select: { id: true, name: true } },
+                },
+              },
             },
           },
           origin: true,

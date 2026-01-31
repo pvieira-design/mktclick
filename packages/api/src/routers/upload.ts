@@ -32,6 +32,7 @@ export const uploadRouter = router({
       const blob = await put(input.filename, buffer, {
         access: 'public',
         contentType: input.contentType,
+        addRandomSuffix: true,
       });
 
       const file = await db.file.create({

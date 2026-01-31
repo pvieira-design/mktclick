@@ -7,7 +7,8 @@ import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Button } from "@/components/base/buttons/button";
 import { Select } from "@/components/base/select/select";
 import { NovelEditor } from "@/components/ui/novel-editor";
-import { UploadCloud01, XClose, File04 } from "@untitledui/icons";
+import { FileUpload, FileListItemProgressBar, getReadableFileSize } from "@/components/application/file-upload/file-upload-base";
+import { XClose, File04 } from "@untitledui/icons";
 
 type FieldType = 
   | "TEXT"
@@ -35,6 +36,12 @@ interface ContentTypeField {
   defaultValue: string | null;
 }
 
+interface FileUploadState {
+  file: File;
+  progress: number;
+  failed: boolean;
+}
+
 interface DynamicFieldRendererProps {
   fields: ContentTypeField[];
   values: Record<string, any>;
@@ -44,6 +51,8 @@ interface DynamicFieldRendererProps {
   errors?: Record<string, string>;
 }
 
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
 export function DynamicFieldRenderer({
   fields,
   values,
@@ -52,27 +61,84 @@ export function DynamicFieldRenderer({
   disabled = false,
   errors = {},
 }: DynamicFieldRendererProps) {
-  const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
+  const [uploadStates, setUploadStates] = useState<Record<string, FileUploadState>>({});
 
-  const handleFileChange = useCallback(
-    async (fieldName: string, file: File | null) => {
-      if (!file || !onFileUpload) return;
+  const handleFileUpload = useCallback(
+    async (fieldName: string, file: File) => {
+      if (!onFileUpload) return;
 
-      setUploadingFields((prev) => new Set(prev).add(fieldName));
+      setUploadStates((prev) => ({
+        ...prev,
+        [fieldName]: { file, progress: 0, failed: false },
+      }));
+
+      const progressInterval = setInterval(() => {
+        setUploadStates((prev) => {
+          const current = prev[fieldName];
+          if (!current || current.progress >= 90) return prev;
+          return {
+            ...prev,
+            [fieldName]: { ...current, progress: current.progress + 10 },
+          };
+        });
+      }, 100);
+
       try {
         const url = await onFileUpload(fieldName, file);
-        onChange(fieldName, url);
+        clearInterval(progressInterval);
+        setUploadStates((prev) => ({
+          ...prev,
+          [fieldName]: { ...prev[fieldName], progress: 100 },
+        }));
+        
+        setTimeout(() => {
+          onChange(fieldName, url);
+          setUploadStates((prev) => {
+            const next = { ...prev };
+            delete next[fieldName];
+            return next;
+          });
+        }, 500);
       } catch (error) {
-        console.error("File upload failed:", error);
-      } finally {
-        setUploadingFields((prev) => {
-          const next = new Set(prev);
-          next.delete(fieldName);
-          return next;
-        });
+        clearInterval(progressInterval);
+        setUploadStates((prev) => ({
+          ...prev,
+          [fieldName]: { ...prev[fieldName], failed: true },
+        }));
       }
     },
     [onChange, onFileUpload]
+  );
+
+  const handleDropFiles = useCallback(
+    (fieldName: string, files: FileList) => {
+      const file = files[0];
+      if (file) {
+        handleFileUpload(fieldName, file);
+      }
+    },
+    [handleFileUpload]
+  );
+
+  const handleRetry = useCallback(
+    (fieldName: string) => {
+      const state = uploadStates[fieldName];
+      if (state) {
+        handleFileUpload(fieldName, state.file);
+      }
+    },
+    [uploadStates, handleFileUpload]
+  );
+
+  const handleDeleteUpload = useCallback(
+    (fieldName: string) => {
+      setUploadStates((prev) => {
+        const next = { ...prev };
+        delete next[fieldName];
+        return next;
+      });
+    },
+    []
   );
 
   const removeFile = useCallback(
@@ -85,7 +151,7 @@ export function DynamicFieldRenderer({
   const renderField = (field: ContentTypeField) => {
     const value = values[field.name] ?? field.defaultValue ?? "";
     const error = errors[field.name];
-    const isUploading = uploadingFields.has(field.name);
+    const uploadState = uploadStates[field.name];
 
     switch (field.fieldType) {
       case "TEXT":
@@ -119,60 +185,66 @@ export function DynamicFieldRenderer({
           <NovelEditor
             value={value}
             onChange={(v) => onChange(field.name, v)}
-            placeholder={field.placeholder || "Start writing..."}
+            placeholder={field.placeholder || "Comece a escrever..."}
             disabled={disabled}
             className={error ? "border-destructive" : ""}
           />
         );
 
       case "FILE":
-        return (
-          <div className="space-y-2">
-            {value ? (
-              <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
-                <File04 className="h-4 w-4 text-muted-foreground" />
-                <a
-                  href={value}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 text-sm truncate hover:underline"
-                >
-                  {value.split("/").pop() || "Uploaded file"}
-                </a>
-                {!disabled && (
-                  <Button
-                    type="button"
-                    color="tertiary"
-                    size="sm"
-                    onClick={() => removeFile(field.name)}
-                    iconLeading={XClose}
-                  />
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <input
-                  id={field.name}
-                  type="file"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    handleFileChange(field.name, file);
-                  }}
-                  disabled={disabled || isUploading}
-                  className="hidden"
-                />
+        if (value) {
+          return (
+            <div className="flex items-center gap-2 p-3 border rounded-xl bg-primary ring-1 ring-secondary ring-inset">
+              <File04 className="h-5 w-5 text-tertiary shrink-0" />
+              <a
+                href={value}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 text-sm font-medium text-secondary truncate hover:underline"
+              >
+                {value.split("/").pop() || "Arquivo enviado"}
+              </a>
+              {!disabled && (
                 <Button
                   type="button"
-                  color="secondary"
-                  onClick={() => document.getElementById(field.name)?.click()}
-                  isDisabled={disabled || isUploading}
-                  iconLeading={UploadCloud01}
-                >
-                  {isUploading ? "Uploading..." : "Choose file"}
-                </Button>
-              </div>
-            )}
-          </div>
+                  color="tertiary"
+                  size="sm"
+                  onClick={() => removeFile(field.name)}
+                  iconLeading={XClose}
+                />
+              )}
+            </div>
+          );
+        }
+
+        if (uploadState) {
+          return (
+            <FileUpload.Root>
+              <FileUpload.List>
+                <FileListItemProgressBar
+                  name={uploadState.file.name}
+                  size={uploadState.file.size}
+                  progress={uploadState.progress}
+                  failed={uploadState.failed}
+                  onDelete={() => handleDeleteUpload(field.name)}
+                  onRetry={() => handleRetry(field.name)}
+                />
+              </FileUpload.List>
+            </FileUpload.Root>
+          );
+        }
+
+        return (
+          <FileUpload.Root>
+            <FileUpload.DropZone
+              hint={`PNG, JPG, PDF, DOC (máx. ${getReadableFileSize(MAX_FILE_SIZE_BYTES)})`}
+              isDisabled={disabled}
+              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+              allowsMultiple={false}
+              maxSize={MAX_FILE_SIZE_BYTES}
+              onDropFiles={(files) => handleDropFiles(field.name, files)}
+            />
+          </FileUpload.Root>
         );
 
       case "DATE":
@@ -209,7 +281,7 @@ export function DynamicFieldRenderer({
             selectedKey={controlledSelectValue || null}
             onSelectionChange={(key) => onChange(field.name, key)}
             isDisabled={disabled}
-            placeholder={field.placeholder || "Select an option..."}
+            placeholder={field.placeholder || "Selecione uma opção..."}
             isInvalid={!!error}
           >
             {options.map((opt) => (
@@ -260,14 +332,14 @@ export function DynamicFieldRenderer({
       case "AD_REFERENCE":
         return (
           <div className="p-3 border rounded-md bg-muted/50 text-muted-foreground text-sm">
-            Ad reference field (coming soon)
+            Campo de referência de anúncio (em breve)
           </div>
         );
 
       default:
         return (
           <div className="text-sm text-muted-foreground">
-            Unknown field type: {field.fieldType}
+            Tipo de campo desconhecido: {field.fieldType}
           </div>
         );
     }
@@ -299,7 +371,7 @@ export function DynamicFieldRenderer({
       ))}
 
       {sortedFields.length === 0 && (
-        <p className="text-sm text-muted-foreground">No custom fields configured.</p>
+        <p className="text-sm text-muted-foreground">Nenhum campo personalizado configurado.</p>
       )}
     </div>
   );

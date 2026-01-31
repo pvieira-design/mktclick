@@ -27,6 +27,7 @@ interface UseFieldPermissionsParams {
     value: any;
   }>;
   currentStep?: {
+    approverAreaId?: string | null;
     requiredFieldsToExit: string[];
   } | null;
 }
@@ -42,9 +43,8 @@ interface UseFieldPermissionsResult {
  *
  * Logic:
  * - DRAFT: all fields editable if user is creator
- * - REJECTED: all fields editable if user is creator OR member of target step area
- * - IN_REVIEW/PENDING: fields where assignedStepId === currentStepId are editable for area members
- *   OR fields where assignedStepId === null (unassigned) are editable for area members
+ * - REJECTED: all fields editable if user is creator; area members of current step can edit step's fields + unassigned
+ * - IN_REVIEW/PENDING: fields where assignedStepId === currentStepId OR unassigned, ONLY for members of the step's approver area
  * - APPROVED: all fields editable only for admin
  * - CANCELLED: nothing editable
  *
@@ -58,7 +58,7 @@ export function useFieldPermissions(
     const defaultResult: UseFieldPermissionsResult = {
       editableFieldIds: new Set(),
       requiredFieldIds: new Set(),
-      canAdvance: false,
+      canAdvance: true,
     };
 
     if (!params.request || !params.userId) {
@@ -67,6 +67,7 @@ export function useFieldPermissions(
 
     const { request, userId, userRole, userAreaMemberships, fieldValues, currentStep } = params;
     const isCreator = request.creatorId === userId;
+    const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN";
     const status = request.status;
     const currentStepId = request.currentStepId;
     const fields = request.contentType?.fields || [];
@@ -83,6 +84,12 @@ export function useFieldPermissions(
       return false;
     };
 
+    // Check if user is a member of the current step's approver area
+    const stepApproverAreaId = currentStep?.approverAreaId;
+    const isStepAreaMember = stepApproverAreaId
+      ? userAreaMemberships.some((m) => m.areaId === stepApproverAreaId)
+      : userAreaMemberships.length > 0; // If no specific area configured, any area member qualifies
+
     let editableFieldIds = new Set<string>();
 
     if (status === "DRAFT") {
@@ -91,32 +98,42 @@ export function useFieldPermissions(
       }
     } else if (status === "REJECTED") {
       if (isCreator) {
+        // Creator can edit all fields when rejected
         editableFieldIds = new Set(fields.map((f) => f.id));
-      } else if (currentStepId) {
-        editableFieldIds = new Set(
-          fields.filter((f) => f.assignedStepId === null).map((f) => f.id)
-        );
-      }
-    } else if (status === "IN_REVIEW" || status === "PENDING") {
-      if (currentStepId && userAreaMemberships.length > 0) {
+      } else if (currentStepId && isStepAreaMember) {
+        // Area member of the current step can edit: step-assigned fields + unassigned fields
         editableFieldIds = new Set(
           fields
             .filter(
               (f) =>
                 f.assignedStepId === currentStepId ||
-                (f.assignedStepId === null && userAreaMemberships.length > 0)
+                f.assignedStepId === null
+            )
+            .map((f) => f.id)
+        );
+      }
+    } else if (status === "IN_REVIEW" || status === "PENDING") {
+      if (currentStepId && isStepAreaMember) {
+        // Only members of the step's approver area can edit fields
+        editableFieldIds = new Set(
+          fields
+            .filter(
+              (f) =>
+                f.assignedStepId === currentStepId ||
+                f.assignedStepId === null
             )
             .map((f) => f.id)
         );
       }
     } else if (status === "APPROVED") {
-      if (userRole === "ADMIN" || userRole === "SUPER_ADMIN") {
+      if (isAdmin) {
         editableFieldIds = new Set(fields.map((f) => f.id));
       }
     }
 
+    // Calculate required field IDs (fields that must be filled to exit the step)
     let requiredFieldIds = new Set<string>();
-    if (currentStep?.requiredFieldsToExit) {
+    if (currentStep?.requiredFieldsToExit && currentStep.requiredFieldsToExit.length > 0) {
       const requiredFieldNames = new Set(currentStep.requiredFieldsToExit);
       requiredFieldIds = new Set(
         fields

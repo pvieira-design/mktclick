@@ -27,6 +27,7 @@ interface WorkflowStep {
   approverPositions: string[];
   isFinalStep: boolean;
   approverArea?: { id: string; name: string; slug: string } | null;
+  requiredFieldsToExit?: string[];
 }
 
 interface AreaMembership {
@@ -49,6 +50,8 @@ interface WorkflowActionsProps {
   request: RequestData;
   userId: string;
   userAreaMemberships: AreaMembership[];
+  canAdvanceFields?: boolean;
+  pendingRequiredFieldCount?: number;
   onActionComplete?: () => void;
 }
 
@@ -56,6 +59,8 @@ export function WorkflowActions({
   request,
   userId,
   userAreaMemberships,
+  canAdvanceFields = true,
+  pendingRequiredFieldCount = 0,
   onActionComplete,
 }: WorkflowActionsProps) {
   const queryClient = useQueryClient();
@@ -68,6 +73,8 @@ export function WorkflowActions({
     userId,
     userAreaMemberships,
   });
+
+  const requiredFieldCount = pendingRequiredFieldCount;
 
   const { data: previousSteps } = useQuery({
     ...(trpc.request.getPreviousStepsForReject.queryOptions as any)({
@@ -133,6 +140,7 @@ export function WorkflowActions({
 
   const hasWorkflow = request.workflowSteps && request.workflowSteps.length > 0;
   const currentStep = request.currentStep;
+  const canAdvance = permissions.canAdvance && canAdvanceFields;
 
   if (!hasWorkflow) {
     return null;
@@ -166,33 +174,40 @@ export function WorkflowActions({
             )}
           </div>
 
-          <div className="flex gap-2">
-            {permissions.canAdvance && (
-              <Button
-                onClick={() => advanceStepMutation.mutate({ id: request.id } as any)}
-                isDisabled={advanceStepMutation.isPending}
-                iconLeading={currentStep.isFinalStep ? CheckCircle : ArrowRight}
-              >
-                {advanceStepMutation.isPending ? (
-                  "Processando..."
-                ) : currentStep.isFinalStep ? (
-                  "Aprovar e Finalizar"
-                ) : (
-                  "Aprovar e Avançar"
-                )}
-              </Button>
-            )}
+           <div className="flex flex-col gap-2">
+           {requiredFieldCount > 0 && (
+                <div className="text-xs text-red-600 mb-2">
+                  {requiredFieldCount} campo(s) obrigatório(s) pendente(s) para avançar
+                </div>
+              )}
+             <div className="flex gap-2">
+               {canAdvance && (
+                 <Button
+                   onClick={() => advanceStepMutation.mutate({ id: request.id } as any)}
+                   isDisabled={!canAdvance || advanceStepMutation.isPending}
+                   iconLeading={currentStep.isFinalStep ? CheckCircle : ArrowRight}
+                 >
+                   {advanceStepMutation.isPending ? (
+                     "Processando..."
+                   ) : currentStep.isFinalStep ? (
+                     "Aprovar e Finalizar"
+                   ) : (
+                     "Aprovar e Avançar"
+                   )}
+                 </Button>
+               )}
 
-            {permissions.canReject && (
-              <Button
-                color="primary-destructive"
-                onClick={() => setRejectDialogOpen(true)}
-                iconLeading={XCircle}
-              >
-                Rejeitar
-              </Button>
-            )}
-          </div>
+               {permissions.canReject && (
+                 <Button
+                   color="primary-destructive"
+                   onClick={() => setRejectDialogOpen(true)}
+                   iconLeading={XCircle}
+                 >
+                   Rejeitar
+                 </Button>
+               )}
+             </div>
+           </div>
         </div>
       )}
 

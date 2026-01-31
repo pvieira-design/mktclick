@@ -31,6 +31,7 @@ model Origin {
   
   // Relations
   requests    Request[]
+  files       File[]    @relation("FileOrigin")
   
   @@map("origin")
 }

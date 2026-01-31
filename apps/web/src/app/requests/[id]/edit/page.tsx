@@ -17,6 +17,7 @@ import { ArrowLeft } from "@untitledui/icons";
 import { useContentTypes, useOrigins } from "@/hooks/use-metadata";
 import { DynamicFieldRenderer } from "@/components/request/dynamic-field-renderer";
 import { CreatorParticipationSection, type CreatorParticipation } from "@/components/request/creator-participation-section";
+import { useFileUpload } from "@/hooks/use-file-upload";
 
 type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 type Patologia = "INSONIA" | "ANSIEDADE" | "DOR" | "ESTRESSE" | "INFLAMACAO" | "OUTRO";
@@ -64,6 +65,7 @@ export default function EditRequestPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const requestId = params.id as string;
+  const { uploadFile } = useFileUpload();
 
   const { data: contentTypes, isLoading: loadingContentTypes } = useContentTypes();
   const { data: origins, isLoading: loadingOrigins } = useOrigins();
@@ -378,6 +380,7 @@ export default function EditRequestPage() {
                       fields={fieldsData.items as any}
                       values={fieldValues}
                       onChange={handleFieldChange}
+                      onFileUpload={uploadFile}
                       disabled={updateMutation.isPending || correctMutation.isPending}
                     />
                   ) : (

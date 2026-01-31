@@ -8,10 +8,9 @@ import { Button } from "@/components/base/buttons/button";
 import { Input as UntitledInput } from "@/components/base/input/input";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { ArrowLeft, Save01 } from "@untitledui/icons";
+import { Save01 } from "@untitledui/icons";
 import Link from "next/link";
 
 export default function EditContentTypePage() {
@@ -32,11 +31,11 @@ export default function EditContentTypePage() {
   const updateMutation = useMutation({
     ...(trpc.contentType.update.mutationOptions as any)(),
     onSuccess: () => {
-      toast.success("Content Type updated successfully");
+      toast.success("Tipo de conteúdo atualizado com sucesso");
       router.push("/admin/content-types" as any);
     },
     onError: (error: Error) => {
-      toast.error(`Error: ${error.message}`);
+      toast.error(`Erro: ${error.message}`);
     }
   });
 
@@ -64,160 +63,104 @@ export default function EditContentTypePage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10" />
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-[200px]" />
-            <Skeleton className="h-4 w-[300px]" />
+      <div className="max-w-2xl space-y-6">
+        <div className="rounded-xl bg-primary shadow-xs ring-1 ring-border-secondary">
+          <div className="px-6 pt-6 space-y-2">
+            <Skeleton className="h-6 w-[150px] rounded-md" />
+            <Skeleton className="h-4 w-[250px] rounded-md" />
           </div>
-        </div>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-[150px]" />
-            <Skeleton className="h-4 w-[250px]" />
-          </CardHeader>
-          <CardContent className="space-y-4">
+          <div className="space-y-4 px-6 pb-6 pt-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-[80px]" />
-                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-4 w-[80px] rounded-md" />
+                <Skeleton className="h-10 w-full rounded-md" />
               </div>
             ))}
-           </CardContent>
-        </Card>
-      </div>
-    );
-}
-
-  return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Link 
-          href="/admin/content-types"
-        >
-          <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Edit Content Type</h1>
-          <p className="text-muted-foreground">Update content type properties.</p>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      <Card>
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div className="rounded-xl bg-primary shadow-xs ring-1 ring-border-secondary">
         <form onSubmit={handleSubmit}>
-          <CardHeader>
-            <CardTitle>Content Type Details</CardTitle>
-            <CardDescription>
-              Modify the properties for this content type.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <UntitledInput 
-              label="Name"
-              value={name} 
-              onChange={(value) => setName(value)} 
-              placeholder="e.g. Blog Post" 
-              isRequired 
-            />
-            
-            <UntitledInput 
-              label="Slug"
-              value={slug} 
-              onChange={(value) => setSlug(value)} 
-              placeholder="e.g. blog-post" 
-              isRequired 
-              hint="Unique identifier used in URLs and API calls."
+          <div className="px-6 pt-6">
+            <h2 className="text-lg font-semibold text-primary">Detalhes do Tipo de Conteúdo</h2>
+            <p className="text-sm text-tertiary mt-1">
+              Modifique as propriedades deste tipo de conteúdo.
+            </p>
+          </div>
+          <div className="space-y-4 px-6 pb-6 pt-4">
+            <UntitledInput
+              label="Nome"
+              value={name}
+              onChange={(value) => setName(value)}
+              placeholder="Ex: Post de Blog"
+              isRequired
             />
 
-            <TextArea 
-              label="Description"
-              value={description} 
-              onChange={(value) => setDescription(value)} 
-              placeholder="Describe what this content type is used for..." 
+            <UntitledInput
+              label="Slug"
+              value={slug}
+              onChange={(value) => setSlug(value)}
+              placeholder="Ex: post-de-blog"
+              isRequired
+              hint="Identificador único usado em URLs e chamadas de API."
+            />
+
+            <TextArea
+              label="Descrição"
+              value={description}
+              onChange={(value) => setDescription(value)}
+              placeholder="Descreva para que serve este tipo de conteúdo..."
               rows={3}
             />
 
             <div className="grid grid-cols-2 gap-4">
-              <UntitledInput 
-                label="Icon Name"
-                value={icon} 
-                onChange={(value) => setIcon(value)} 
-                placeholder="e.g. file-text" 
-                hint="Lucide icon name (optional)."
+              <UntitledInput
+                label="Nome do Ícone"
+                value={icon}
+                onChange={(value) => setIcon(value)}
+                placeholder="Ex: file-text"
+                hint="Nome do ícone Lucide (opcional)."
               />
 
               <div className="space-y-1.5">
-                <UntitledInput 
-                  label="Color"
-                  value={color} 
-                  onChange={(value) => setColor(value)} 
-                  placeholder="#000000" 
+                <UntitledInput
+                  label="Cor"
+                  value={color}
+                  onChange={(value) => setColor(value)}
+                  placeholder="#000000"
                   isRequired
                 />
-                <Input 
-                  type="color" 
-                  value={color} 
-                  onChange={(e) => setColor(e.target.value)} 
+                <Input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
                   className="w-full h-10 p-1 cursor-pointer rounded-lg"
                 />
               </div>
             </div>
-          </CardContent>
-          <CardFooter className="flex justify-end gap-2">
-            <Link 
-              href="/admin/content-types"
-            >
+          </div>
+          <div className="flex justify-end gap-3 border-t border-secondary px-6 py-4">
+            <Link href="/admin/content-types">
               <Button color="secondary">
-                Cancel
+                Cancelar
               </Button>
             </Link>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               isDisabled={updateMutation.isPending}
               isLoading={updateMutation.isPending}
               iconLeading={Save01}
             >
-              Save Changes
+              Salvar Alterações
             </Button>
-          </CardFooter>
-         </form>
-       </Card>
-
-       <Card className="mt-6">
-         <CardHeader>
-           <CardTitle className="text-lg">Configuration</CardTitle>
-           <CardDescription>
-             Configure custom fields and workflow for this content type.
-           </CardDescription>
-         </CardHeader>
-         <CardContent className="grid gap-4 sm:grid-cols-2">
-           <Link
-             href={`/admin/content-types/${id}/fields` as any}
-             className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-           >
-             <div>
-               <p className="font-medium">Custom Fields</p>
-               <p className="text-sm text-muted-foreground">
-                 Configure form fields for requests of this type
-               </p>
-             </div>
-             <ArrowLeft className="h-4 w-4 rotate-180" />
-           </Link>
-           <Link
-             href={`/admin/content-types/${id}/workflow` as any}
-             className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-           >
-             <div>
-               <p className="font-medium">Workflow Steps</p>
-               <p className="text-sm text-muted-foreground">
-                 Configure approval workflow for this type
-               </p>
-             </div>
-             <ArrowLeft className="h-4 w-4 rotate-180" />
-           </Link>
-         </CardContent>
-       </Card>
-     </div>
-   );
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }

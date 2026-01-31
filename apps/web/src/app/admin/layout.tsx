@@ -1,7 +1,9 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@marketingclickcannabis/auth";
-import Link from "next/link";
+
+import { ProfileWidget } from "@/components/profile-widget";
+import { Sidebar } from "@/components/sidebar";
 
 export default async function AdminLayout({
   children,
@@ -16,57 +18,16 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  // Only SUPER_ADMIN can access admin panel
-  if (session.user.role !== "SUPER_ADMIN") {
+  if (!session.user.role || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
     redirect("/dashboard");
   }
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 border-r bg-muted/30 p-4">
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold">Admin Panel</h2>
-          <p className="text-sm text-muted-foreground">Configurações do sistema</p>
-        </div>
-        <nav className="space-y-1">
-          <Link
-            href="/admin/content-types"
-            className="block rounded-md px-3 py-2 text-sm hover:bg-muted"
-          >
-            Content Types
-          </Link>
-          <Link
-            href="/admin/origins"
-            className="block rounded-md px-3 py-2 text-sm hover:bg-muted"
-          >
-            Origins
-          </Link>
-          <Link
-            href="/admin/areas"
-            className="block rounded-md px-3 py-2 text-sm hover:bg-muted"
-          >
-            Areas
-          </Link>
-          <Link
-            href="/admin/users"
-            className="block rounded-md px-3 py-2 text-sm hover:bg-muted"
-          >
-            Users
-          </Link>
-        </nav>
-        <div className="mt-8 pt-4 border-t">
-          <Link
-            href="/dashboard"
-            className="block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted"
-          >
-            ← Voltar ao Dashboard
-          </Link>
-        </div>
-      </aside>
-      
-      <main className="flex-1 p-6">
-        {children}
-      </main>
+    <div className="flex h-screen">
+      <Sidebar userRole={session.user.role}>
+        <ProfileWidget session={session} />
+      </Sidebar>
+      <main className="flex-1 overflow-auto bg-secondary p-8">{children}</main>
     </div>
   );
 }

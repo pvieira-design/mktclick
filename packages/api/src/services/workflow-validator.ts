@@ -168,11 +168,21 @@ export async function getAllSteps(
 
 /**
  * Check if user's area has permission to create requests of this content type.
+ * Admins and super admins bypass area-based permission checks.
  */
 export async function canUserCreateRequestOfType(
   userId: string,
   contentTypeId: string
 ): Promise<boolean> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  if (user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") {
+    return true;
+  }
+
   const userMemberships = await db.areaMember.findMany({
     where: { userId },
     select: { areaId: true },

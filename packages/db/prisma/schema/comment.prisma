@@ -1,0 +1,18 @@
+// Comment Model - Comentários em requests para colaboração
+model Comment {
+  id        String   @id @default(cuid())
+  
+  requestId String
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  content   String   @db.Text
+  
+  createdAt DateTime @default(now())
+  
+  @@index([requestId])
+  @@index([userId])
+  @@map("comment")
+}

@@ -27,6 +27,7 @@ model Creator {
   // Relations
   responsible    User                   @relation("CreatorResponsible", fields: [responsibleId], references: [id], onDelete: Cascade)
   participations CreatorParticipation[]
+  files          File[]                 @relation("FileCreator")
 
   // Indexes
   @@index([responsibleId])

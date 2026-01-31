@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Card, CardHeader, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { BadgeWithDot } from "@/components/base/badges/badges";
+import type { BadgeColors } from "@/components/base/badges/badge-types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface RequestCardProps {
   request: {
@@ -18,31 +19,21 @@ interface RequestCardProps {
   };
 }
 
-const statusLabels: Record<string, string> = {
-  DRAFT: "Rascunho",
-  PENDING: "Pendente",
-  IN_REVIEW: "Em Revisão",
-  APPROVED: "Aprovado",
-  REJECTED: "Rejeitado",
-  CORRECTED: "Corrigido",
-  CANCELLED: "Cancelado",
-};
-
-const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  DRAFT: "outline",
-  PENDING: "secondary",
-  IN_REVIEW: "secondary",
-  APPROVED: "default",
-  REJECTED: "destructive",
-  CORRECTED: "secondary",
-  CANCELLED: "outline",
+const statusConfig: Record<string, { label: string; color: BadgeColors }> = {
+  DRAFT: { label: "Rascunho", color: "gray" },
+  PENDING: { label: "Pendente", color: "warning" },
+  IN_REVIEW: { label: "Em Revisao", color: "blue" },
+  APPROVED: { label: "Aprovado", color: "success" },
+  REJECTED: { label: "Rejeitado", color: "error" },
+  CORRECTED: { label: "Corrigido", color: "brand" },
+  CANCELLED: { label: "Cancelado", color: "gray" },
 };
 
 const contentTypeLabels: Record<string, string> = {
-  VIDEO_UGC: "Vídeo UGC",
-  VIDEO_INSTITUCIONAL: "Vídeo Institucional",
+  VIDEO_UGC: "Video UGC",
+  VIDEO_INSTITUCIONAL: "Video Institucional",
   CARROSSEL: "Carrossel",
-  POST_UNICO: "Post Único",
+  POST_UNICO: "Post Unico",
   STORIES: "Stories",
   REELS: "Reels",
 };
@@ -55,10 +46,32 @@ const originLabels: Record<string, string> = {
 
 const priorityLabels: Record<string, string> = {
   LOW: "Baixa",
-  MEDIUM: "Média",
+  MEDIUM: "Media",
   HIGH: "Alta",
   URGENT: "Urgente",
 };
+
+export function RequestCardSkeleton() {
+  return (
+    <div className="rounded-xl bg-primary shadow-xs ring-1 ring-border-secondary">
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+        <Skeleton className="h-5 w-2/5 rounded-md" />
+        <Skeleton className="h-5 w-20 rounded-full" />
+      </div>
+
+      <div className="flex items-center gap-2 px-5 pb-4">
+        <Skeleton className="h-4 w-24 rounded-md" />
+        <Skeleton className="h-4 w-20 rounded-md" />
+        <Skeleton className="h-4 w-16 rounded-md" />
+      </div>
+
+      <div className="flex items-center justify-between border-t border-secondary px-5 py-3">
+        <Skeleton className="h-3.5 w-48 rounded-md" />
+        <Skeleton className="h-3.5 w-28 rounded-md" />
+      </div>
+    </div>
+  );
+}
 
 export function RequestCard({ request }: RequestCardProps) {
   const formatDate = (date: Date) => {
@@ -66,60 +79,76 @@ export function RequestCard({ request }: RequestCardProps) {
   };
 
   const getContentTypeName = () => {
-    if (typeof request.contentType === 'object' && request.contentType?.name) {
+    if (typeof request.contentType === "object" && request.contentType?.name) {
       return request.contentType.name;
     }
-    if (typeof request.contentType === 'string') {
+    if (typeof request.contentType === "string") {
       return contentTypeLabels[request.contentType] || request.contentType;
     }
-    return "Tipo não definido";
+    return "Tipo nao definido";
   };
 
   const getOriginName = () => {
-    if (typeof request.origin === 'object' && request.origin?.name) {
+    if (typeof request.origin === "object" && request.origin?.name) {
       return request.origin.name;
     }
-    if (typeof request.origin === 'string') {
+    if (typeof request.origin === "string") {
       return originLabels[request.origin] || request.origin;
     }
-    return "Origem não definida";
+    return "Origem nao definida";
+  };
+
+  const status = statusConfig[request.status] || {
+    label: request.status,
+    color: "gray" as BadgeColors,
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg font-semibold leading-none tracking-tight">
-          <Link href={`/requests/${request.id}` as any} className="hover:underline decoration-primary underline-offset-4">
-            {request.title}
-          </Link>
-        </CardTitle>
-        <Badge variant={statusVariants[request.status] || "outline"}>
-          {statusLabels[request.status] || request.status}
-        </Badge>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">
-            {getContentTypeName()}
-          </span>
-          <span className="text-muted-foreground/40">|</span>
-          <span>{getOriginName()}</span>
-          <span className="text-muted-foreground/40">|</span>
-          <span className={request.priority === "URGENT" ? "text-destructive font-medium" : ""}>
-            {priorityLabels[request.priority] || request.priority}
-          </span>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between text-xs text-muted-foreground pt-2 border-t">
-        <div>
-          Criado por <span className="font-medium text-foreground">{request.createdBy?.name || "Desconhecido"}</span> em {formatDate(request.createdAt)}
-        </div>
+    <Link
+      href={`/requests/${request.id}` as any}
+      className="block rounded-xl bg-primary shadow-xs ring-1 ring-border-secondary transition-all hover:shadow-md hover:ring-border-primary"
+    >
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+        <h3 className="text-md font-semibold text-primary leading-tight">
+          {request.title}
+        </h3>
+        <BadgeWithDot type="pill-color" size="sm" color={status.color}>
+          {status.label}
+        </BadgeWithDot>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 px-5 pb-4 text-sm text-tertiary">
+        <span className="font-medium text-secondary">
+          {getContentTypeName()}
+        </span>
+        <span className="text-quaternary">|</span>
+        <span>{getOriginName()}</span>
+        <span className="text-quaternary">|</span>
+        <span
+          className={
+            request.priority === "URGENT"
+              ? "font-medium text-error-primary"
+              : ""
+          }
+        >
+          {priorityLabels[request.priority] || request.priority}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-secondary px-5 py-3">
+        <p className="text-xs text-tertiary">
+          Criado por{" "}
+          <span className="font-medium text-secondary">
+            {request.createdBy?.name || "Desconhecido"}
+          </span>{" "}
+          em {formatDate(request.createdAt)}
+        </p>
         {request.deadline && (
-          <div className="font-medium">
+          <p className="text-xs font-medium text-tertiary">
             Prazo: {formatDate(request.deadline)}
-          </div>
+          </p>
         )}
-      </CardFooter>
-    </Card>
+      </div>
+    </Link>
   );
 }

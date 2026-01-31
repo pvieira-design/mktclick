@@ -23,7 +23,7 @@ export default async function DashboardLayout({
       <Sidebar userRole={session.user.role ?? undefined}>
         <ProfileWidget session={session} />
       </Sidebar>
-      <main className="flex-1 overflow-auto p-6">{children}</main>
+      <main className="flex-1 overflow-auto bg-secondary p-8">{children}</main>
     </div>
   );
 }

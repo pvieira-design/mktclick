@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import Link from "next/link";
 import { Button } from "@/components/base/buttons/button";
 import { Badge } from "@/components/base/badges/badges";
+import { Table, TableCard } from "@/components/application/table/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NewAreaDrawer } from "@/components/area/new-area-drawer";
 import { toast } from "sonner";
 import { Plus, Edit01, Power01, Users01 } from "@untitledui/icons";
 
@@ -22,15 +25,16 @@ interface Area {
 
 export default function AreasListPage() {
   const queryClient = useQueryClient();
+  const [isNewDrawerOpen, setIsNewDrawerOpen] = useState(false);
   
-  const { data, isLoading, isError } = useQuery(
+  const { data, isLoading } = useQuery(
     trpc.area.list.queryOptions()
   );
 
   const toggleActiveMutation = useMutation({
     ...(trpc.area.toggleActive.mutationOptions as any)(),
     onSuccess: () => {
-      toast.success("Area status updated");
+       toast.success("Status da área atualizado");
       queryClient.invalidateQueries({ queryKey: [["area", "list"]] });
     },
     onError: (error: Error) => {
@@ -42,102 +46,111 @@ export default function AreasListPage() {
     (toggleActiveMutation.mutate as any)({ id });
   };
 
+   const columns = [
+     { id: "name", label: "Nome" },
+     { id: "slug", label: "Slug" },
+     { id: "description", label: "Descrição" },
+     { id: "members", label: "Membros" },
+     { id: "status", label: "Status" },
+     { id: "actions", label: "Ações" },
+   ];
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Areas</h1>
-          <p className="text-muted-foreground">
-            Manage work areas and teams in the system.
-          </p>
+           <h1 className="text-3xl font-bold tracking-tight text-primary">Áreas</h1>
+           <p className="text-tertiary">
+             Gerencie áreas de trabalho e equipes do sistema.
+           </p>
         </div>
-        <Link href={"/admin/areas/new" as any}>
-          <Button iconLeading={Plus}>New Area</Button>
-        </Link>
+        <Button iconLeading={Plus} onClick={() => setIsNewDrawerOpen(true)}>
+          Nova Área
+        </Button>
       </div>
 
-      <div className="rounded-md border">
-        <div className="relative w-full overflow-auto">
-          <table className="w-full caption-bottom text-sm">
-            <thead className="[&_tr]:border-b">
-              <tr className="border-b transition-colors hover:bg-muted/50">
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Name</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Slug</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Description</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Members</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
-                <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="[&_tr:last-child]:border-0">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b transition-colors hover:bg-muted/50">
-                    <td className="p-4"><Skeleton className="h-4 w-[150px]" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[100px]" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[200px]" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[40px]" /></td>
-                    <td className="p-4"><Skeleton className="h-5 w-[60px]" /></td>
-                    <td className="p-4 text-right"><Skeleton className="ml-auto h-8 w-[120px]" /></td>
-                  </tr>
-                ))
-              ) : isError ? (
-                <tr>
-                  <td colSpan={6} className="p-4 text-center text-red-500">
-                    Failed to load areas.
-                  </td>
-                </tr>
-              ) : data?.items && data.items.length > 0 ? (
-                data.items.map((area: Area) => (
-                  <tr key={area.id} className="border-b transition-colors hover:bg-muted/50">
-                    <td className="p-4 font-medium">{area.name}</td>
-                    <td className="p-4 text-muted-foreground">{area.slug}</td>
-                    <td className="p-4 text-muted-foreground max-w-xs truncate">{area.description || "-"}</td>
-                    <td className="p-4">
-                      <Badge color="gray" type="pill-color" size="sm">{area._count.members}</Badge>
-                    </td>
-                    <td className="p-4">
-                      <Badge color={area.isActive ? "success" : "gray"} type="pill-color" size="sm">
-                        {area.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Link 
-                          href={`/admin/areas/${area.id}/members` as any}
-                          title="Manage Members"
-                        >
-                          <Button color="tertiary" size="sm" iconLeading={Users01} />
-                        </Link>
-                        <Button 
-                          color="tertiary" 
-                          size="sm"
-                          iconLeading={Power01}
-                          onClick={() => handleToggleActive(area.id)}
-                          isDisabled={toggleActiveMutation.isPending}
-                          title={area.isActive ? "Deactivate" : "Activate"}
-                          className={area.isActive ? "text-green-600" : "text-muted-foreground"}
-                        />
-                        <Link 
-                          href={`/admin/areas/${area.id}/edit` as any}
-                        >
-                          <Button color="tertiary" size="sm" iconLeading={Edit01} />
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                    No areas found. Create one to get started.
-                  </td>
-                </tr>
+      <TableCard.Root size="sm">
+        {isLoading ? (
+          <div className="p-6 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+         ) : (data?.items ?? []).length === 0 ? (
+           <div className="p-8 text-center text-tertiary">
+             Nenhuma área encontrada. Crie uma para começar.
+           </div>
+        ) : (
+           <Table size="sm" aria-label="Áreas">
+            <Table.Header columns={columns}>
+              {(column) => (
+                <Table.Head 
+                  key={column.id} 
+                  id={column.id} 
+                  label={column.label}
+                  isRowHeader={column.id === "name"}
+                />
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </Table.Header>
+            <Table.Body items={data?.items ?? []}>
+              {(area: Area) => (
+                <Table.Row key={area.id} id={area.id}>
+                  <Table.Cell className="font-medium text-primary">
+                    {area.name}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {area.slug}
+                  </Table.Cell>
+                  <Table.Cell className="max-w-xs truncate">
+                    {area.description || "-"}
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Badge color="gray" type="pill-color" size="sm">
+                      {area._count.members}
+                    </Badge>
+                  </Table.Cell>
+                   <Table.Cell>
+                     <Badge color={area.isActive ? "success" : "gray"} type="pill-color" size="sm">
+                       {area.isActive ? "Ativo" : "Inativo"}
+                     </Badge>
+                   </Table.Cell>
+                  <Table.Cell>
+                    <div className="flex items-center gap-1">
+                      <Link href={`/admin/areas/${area.id}/members` as any}>
+                        <Button 
+                          color="tertiary"
+                          size="sm"
+                          iconLeading={Users01}
+                        />
+                      </Link>
+                      <Button 
+                        color="tertiary"
+                        size="sm"
+                        iconLeading={Power01}
+                        onClick={() => handleToggleActive(area.id)}
+                        isDisabled={toggleActiveMutation.isPending}
+                        className={area.isActive ? "text-fg-success-primary" : ""}
+                      />
+                      <Link href={`/admin/areas/${area.id}/edit` as any}>
+                        <Button 
+                          color="tertiary"
+                          size="sm"
+                          iconLeading={Edit01}
+                        />
+                      </Link>
+                    </div>
+                  </Table.Cell>
+                </Table.Row>
+              )}
+            </Table.Body>
+          </Table>
+        )}
+      </TableCard.Root>
+
+      <NewAreaDrawer
+        open={isNewDrawerOpen}
+        onOpenChange={setIsNewDrawerOpen}
+      />
     </div>
   );
 }

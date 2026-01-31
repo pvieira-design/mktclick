@@ -1,16 +1,22 @@
+"use client";
+
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import z from "zod";
 
+import { Button } from "@/components/base/buttons/button";
+import { Input } from "@/components/base/input/input";
+import { ClickLogo, ClickLogoIcon } from "@/components/foundations/logo/click-logo";
 import { authClient } from "@/lib/auth-client";
 
 import Loader from "./loader";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
 
-export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () => void }) {
+export default function SignUpForm({
+  onSwitchToSignIn,
+}: {
+  onSwitchToSignIn: () => void;
+}) {
   const router = useRouter();
   const { isPending } = authClient.useSession();
 
@@ -52,107 +58,134 @@ export default function SignUpForm({ onSwitchToSignIn }: { onSwitchToSignIn: () 
   }
 
   return (
-    <div className="mx-auto w-full mt-10 max-w-md p-6">
-      <h1 className="mb-6 text-center text-3xl font-bold">Create Account</h1>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-        className="space-y-4"
-      >
-        <div>
-          <form.Field name="name">
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Name</Label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-                {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
-                    {error?.message}
-                  </p>
-                ))}
+    <section className="grid min-h-screen grid-cols-1 bg-primary lg:grid-cols-2">
+      <div className="flex flex-col bg-primary">
+        <div className="flex flex-1 justify-center px-4 py-12 md:items-center md:px-8 md:py-32">
+          <div className="flex w-full flex-col gap-8 sm:max-w-[360px]">
+            <div className="flex flex-col gap-6 md:gap-20">
+              <ClickLogo className="max-md:hidden" />
+              <ClickLogoIcon className="size-10 md:hidden" />
+              <div className="flex flex-col gap-2 md:gap-3">
+                <h1 className="text-display-xs font-semibold text-primary md:text-display-md">
+                  Create an account
+                </h1>
+                <p className="text-md text-tertiary">
+                  Start your journey today.
+                </p>
               </div>
-            )}
-          </form.Field>
-        </div>
+            </div>
 
-        <div>
-          <form.Field name="email">
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Email</Label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="email"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-                {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
-                    {error?.message}
-                  </p>
-                ))}
-              </div>
-            )}
-          </form.Field>
-        </div>
-
-        <div>
-          <form.Field name="password">
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Password</Label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="password"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-                {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
-                    {error?.message}
-                  </p>
-                ))}
-              </div>
-            )}
-          </form.Field>
-        </div>
-
-        <form.Subscribe>
-          {(state) => (
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={!state.canSubmit || state.isSubmitting}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                form.handleSubmit();
+              }}
+              className="flex flex-col gap-6"
             >
-              {state.isSubmitting ? "Submitting..." : "Sign Up"}
-            </Button>
-          )}
-        </form.Subscribe>
-      </form>
+              <div className="flex flex-col gap-5">
+                <form.Field name="name">
+                  {(field) => (
+                    <Input
+                      label="Name"
+                      placeholder="Enter your name"
+                      size="md"
+                      isRequired
+                      hideRequiredIndicator
+                      value={field.state.value}
+                      onChange={(value) => field.handleChange(value)}
+                      onBlur={field.handleBlur}
+                      isInvalid={field.state.meta.errors.length > 0}
+                      hint={
+                        field.state.meta.errors.length > 0
+                          ? String(field.state.meta.errors[0])
+                          : undefined
+                      }
+                    />
+                  )}
+                </form.Field>
 
-      <div className="mt-4 text-center">
-        <Button
-          variant="link"
-          onClick={onSwitchToSignIn}
-          className="text-indigo-600 hover:text-indigo-800"
-        >
-          Already have an account? Sign In
-        </Button>
+                <form.Field name="email">
+                  {(field) => (
+                    <Input
+                      label="Email"
+                      type="email"
+                      placeholder="Enter your email"
+                      size="md"
+                      isRequired
+                      hideRequiredIndicator
+                      value={field.state.value}
+                      onChange={(value) => field.handleChange(value)}
+                      onBlur={field.handleBlur}
+                      isInvalid={field.state.meta.errors.length > 0}
+                      hint={
+                        field.state.meta.errors.length > 0
+                          ? String(field.state.meta.errors[0])
+                          : undefined
+                      }
+                    />
+                  )}
+                </form.Field>
+
+                <form.Field name="password">
+                  {(field) => (
+                    <Input
+                      label="Password"
+                      type="password"
+                      placeholder="••••••••"
+                      size="md"
+                      isRequired
+                      hideRequiredIndicator
+                      value={field.state.value}
+                      onChange={(value) => field.handleChange(value)}
+                      onBlur={field.handleBlur}
+                      isInvalid={field.state.meta.errors.length > 0}
+                      hint={
+                        field.state.meta.errors.length > 0
+                          ? String(field.state.meta.errors[0])
+                          : undefined
+                      }
+                    />
+                  )}
+                </form.Field>
+              </div>
+
+              <form.Subscribe>
+                {(state) => (
+                  <Button
+                    type="submit"
+                    color="primary"
+                    size="lg"
+                    className="w-full"
+                    isDisabled={!state.canSubmit}
+                    isLoading={state.isSubmitting}
+                  >
+                    Sign up
+                  </Button>
+                )}
+              </form.Subscribe>
+            </form>
+
+            <div className="flex justify-center gap-1 text-center">
+              <span className="text-sm text-tertiary">
+                Already have an account?
+              </span>
+              <Button color="link-color" size="md" onClick={onSwitchToSignIn}>
+                Log in
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <footer className="hidden p-8 pt-11 lg:block">
+          <p className="text-sm text-tertiary">© Click Cannabis 2025</p>
+        </footer>
       </div>
-    </div>
+
+      <div className="relative hidden items-center justify-center overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 lg:flex">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(0,0,0,0.1),transparent_50%)]" />
+      </div>
+    </section>
   );
 }

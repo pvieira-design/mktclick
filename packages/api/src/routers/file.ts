@@ -54,6 +54,19 @@ export const fileRouter = router({
               image: true,
             },
           },
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+            },
+          },
+          origin: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       }),
       db.file.count({ where }),
@@ -83,6 +96,19 @@ export const fileRouter = router({
               name: true,
               email: true,
               image: true,
+            },
+          },
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+            },
+          },
+          origin: {
+            select: {
+              id: true,
+              name: true,
             },
           },
           requests: {
@@ -137,7 +163,10 @@ export const fileRouter = router({
         id: z.string().cuid(),
         name: z.string().min(1).max(255).optional(),
         description: z.string().max(2000).optional().nullable(),
+        thumbnailUrl: z.string().url().optional().nullable(),
         tagIds: z.array(z.string().cuid()).optional(),
+        creatorId: z.string().cuid().optional().nullable(),
+        originId: z.string().cuid().optional().nullable(),
       })
     )
     .mutation(async ({ input }) => {
@@ -181,6 +210,19 @@ export const fileRouter = router({
                 image: true,
               },
             },
+            creator: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+              },
+            },
+            origin: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         });
 
@@ -221,6 +263,78 @@ export const fileRouter = router({
       return db.file.update({
         where: { id: input.id },
         data: { isArchived: false },
+      });
+    }),
+
+  bulkUpdateTags: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().cuid()).min(1).max(200),
+        tagIds: z.array(z.string().cuid()),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { ids, tagIds } = input;
+      return db.$transaction(async (tx) => {
+        await tx.fileTagOnFile.deleteMany({ where: { fileId: { in: ids } } });
+        if (tagIds.length > 0) {
+          await tx.fileTagOnFile.createMany({
+            data: ids.flatMap((fileId) =>
+              tagIds.map((tagId) => ({ fileId, tagId }))
+            ),
+          });
+        }
+        return { count: ids.length };
+      });
+    }),
+
+  bulkUpdateCreator: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().cuid()).min(1).max(200),
+        creatorId: z.string().cuid().nullable(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const result = await db.file.updateMany({
+        where: { id: { in: input.ids } },
+        data: { creatorId: input.creatorId },
+      });
+      return { count: result.count };
+    }),
+
+  bulkArchive: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().cuid()).min(1).max(200),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const result = await db.file.updateMany({
+        where: { id: { in: input.ids } },
+        data: { isArchived: true },
+      });
+      return { count: result.count };
+    }),
+
+  bulkRename: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().cuid()).min(1).max(200),
+        prefix: z.string().max(100).default(""),
+        suffix: z.string().max(100).default(""),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { ids, prefix, suffix } = input;
+      return db.$transaction(async (tx) => {
+        for (let i = 0; i < ids.length; i++) {
+          await tx.file.update({
+            where: { id: ids[i] },
+            data: { name: `${prefix}${i + 1}${suffix}` },
+          });
+        }
+        return { count: ids.length };
       });
     }),
 });

@@ -7,7 +7,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { WorkflowActions, WorkflowProgress } from "@/components/request/workflow-actions";
 import { RequestFilesSection } from "@/components/request/request-files-section";
+import { InlineFieldEditor } from "@/components/request/inline-field-editor";
+import { FieldVersionHistory } from "@/components/request/field-version-history";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useFieldPermissions } from "@/hooks/use-field-permissions";
 import { Button } from "@/components/base/buttons/button";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { StatusBadge, type RequestStatus } from "@/components/status-badge";
 import { trpc } from "@/utils/trpc";
-import { ArrowLeft, Clock, User01, Calendar, File04, Tag01, MarkerPin01, AlertTriangle } from "@untitledui/icons";
+import { ArrowLeft, Clock, User01, Calendar, File04, Tag01, MarkerPin01, AlertTriangle, CheckSquare, Link01 } from "@untitledui/icons";
 
 const contentTypeLabels: Record<string, string> = {
   VIDEO_UGC: "Vídeo UGC",
@@ -68,11 +71,42 @@ const actionLabels: Record<string, string> = {
   CANCELLED: "Cancelado",
 };
 
+interface ContentTypeField {
+  id: string;
+  name: string;
+  label: string;
+  fieldType: string;
+  required: boolean;
+  order: number;
+  options: string[] | null;
+  placeholder: string | null;
+  helpText: string | null;
+  defaultValue: string | null;
+  assignedStepId: string | null;
+  assignedStep: { id: string; name: string } | null;
+}
+
+interface FieldValue {
+  id: string;
+  value: any;
+  field: {
+    id: string;
+    name: string;
+    label: string;
+    fieldType: string;
+  };
+}
+
 interface RequestData {
   id: string;
   title: string;
   description: string;
-  contentType: { id: string; name: string; slug: string } | null;
+  contentType: {
+    id: string;
+    name: string;
+    slug: string;
+    fields: ContentTypeField[];
+  } | null;
   status: RequestStatus;
   origin: { id: string; name: string; slug: string } | null;
   priority: string;
@@ -83,6 +117,7 @@ interface RequestData {
   updatedAt: string;
   createdBy: { id: string; name: string | null; email: string };
   reviewedBy: { id: string; name: string | null; email: string } | null;
+  fieldValues: FieldValue[];
   history: Array<{
     id: string;
     action: string;
@@ -107,6 +142,7 @@ interface RequestData {
     approverAreaId: string | null;
     approverPositions: string[];
     isFinalStep: boolean;
+    requiredFieldsToExit: string[];
     approverArea?: { id: string; name: string; slug: string } | null;
   } | null;
   currentStepId: string | null;
@@ -117,6 +153,7 @@ interface RequestData {
     approverAreaId: string | null;
     approverPositions: string[];
     isFinalStep: boolean;
+    requiredFieldsToExit: string[];
     approverArea?: { id: string; name: string; slug: string } | null;
   }>;
   totalSteps: number;
@@ -157,6 +194,36 @@ export default function RequestDetailsPage() {
   const { data: request, isLoading, error } = useQuery<RequestData>(
     (trpc.request.getById.queryOptions as any)({ id: requestId })
   );
+
+  const { editableFieldIds, requiredFieldIds, canAdvance: canAdvanceFields } = useFieldPermissions({
+    request: request ? {
+      id: request.id,
+      status: request.status,
+      currentStepId: request.currentStepId,
+      creatorId: request.createdBy.id,
+      contentType: request.contentType ? {
+        fields: request.contentType.fields.map(f => ({
+          id: f.id,
+          name: f.name,
+          assignedStepId: f.assignedStepId,
+        })),
+      } : null,
+    } : null,
+    userId: currentUser?.id || "",
+    userRole: currentUser?.role || "",
+    userAreaMemberships: areaMemberships.map(m => ({
+      areaId: m.areaId,
+      position: m.position,
+    })),
+    fieldValues: request?.fieldValues?.map(fv => ({
+      fieldId: fv.field.id,
+      value: fv.value,
+    })) || [],
+    currentStep: request?.currentStep ? {
+      approverAreaId: request.currentStep.approverAreaId,
+      requiredFieldsToExit: request.currentStep.requiredFieldsToExit || [],
+    } : null,
+  });
 
   const invalidateAndRefetch = () => {
     queryClient.invalidateQueries({ queryKey: ["request"] });
@@ -263,6 +330,8 @@ export default function RequestDetailsPage() {
             position: m.position,
             area: m.area,
           }))}
+          canAdvanceFields={canAdvanceFields}
+          pendingRequiredFieldCount={requiredFieldIds.size}
           onActionComplete={invalidateAndRefetch}
         />
       );
@@ -402,6 +471,105 @@ export default function RequestDetailsPage() {
                 {request.description}
               </div>
             </div>
+
+            {request.contentType?.fields && request.contentType.fields.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <p className="text-sm font-medium mb-4">Campos Personalizados</p>
+                  
+                  {/* Agrupar campos por step */}
+                  {(() => {
+                    const fieldsByStep = new Map<string | null, typeof request.contentType.fields>();
+                    request.contentType.fields.forEach((field) => {
+                      const stepId = field.assignedStepId;
+                      if (!fieldsByStep.has(stepId)) {
+                        fieldsByStep.set(stepId, []);
+                      }
+                      fieldsByStep.get(stepId)!.push(field);
+                    });
+
+                    // Ordenar: Desagrupado primeiro, depois outros
+                    const sortedEntries = Array.from(fieldsByStep.entries()).sort((a, b) => {
+                      if (a[0] === null) return -1;
+                      if (b[0] === null) return 1;
+                      return 0;
+                    });
+
+                    return (
+                      <div className="space-y-6">
+                        {sortedEntries.map(([stepId, stepFields]) => {
+                          const stepName = stepId 
+                            ? stepFields[0]?.assignedStep?.name || "Step"
+                            : "Desagrupado";
+                          const isCurrentStep = stepId === request.currentStep?.id;
+
+                          return (
+                            <div 
+                              key={stepId || "ungrouped"} 
+                              className={`space-y-3 p-4 rounded-lg ${
+                                isCurrentStep ? "bg-brand-50 border border-brand-200" : "bg-muted/30"
+                              }`}
+                            >
+                              <h4 className={`font-semibold text-sm ${
+                                isCurrentStep ? "text-brand-700" : "text-muted-foreground"
+                              }`}>
+                                {stepName}
+                                {isCurrentStep && (
+                                  <span className="ml-2 text-xs font-normal">(Etapa atual)</span>
+                                )}
+                              </h4>
+                              <div className="space-y-4">
+                                {stepFields
+                                  .sort((a, b) => a.order - b.order)
+                                  .map((field) => {
+                                    const fieldValue = request.fieldValues?.find(
+                                      (fv) => fv.field.id === field.id
+                                    );
+                                    const isEditable = editableFieldIds.has(field.id);
+                                    const isRequired = requiredFieldIds.has(field.id);
+                                    const isMissing = isRequired && !fieldValue?.value;
+
+                                    return (
+                                      <div key={field.id} className="flex items-start gap-2">
+                                        <div className="flex-1">
+                                          <InlineFieldEditor
+                                            field={{
+                                              id: field.id,
+                                              name: field.name,
+                                              label: field.label,
+                                              fieldType: field.fieldType as any,
+                                              required: field.required,
+                                              options: field.options,
+                                              placeholder: field.placeholder,
+                                            }}
+                                            value={fieldValue?.value}
+                                            isEditable={isEditable}
+                                            isRequired={field.required}
+                                            isMissing={isMissing}
+                                            requestId={request.id}
+                                          />
+                                        </div>
+                                        <div className="pt-6">
+                                          <FieldVersionHistory
+                                            requestId={request.id}
+                                            fieldId={field.id}
+                                            fieldLabel={field.label}
+                                          />
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </>
+            )}
 
             {request.files && request.files.length > 0 && (
               <>

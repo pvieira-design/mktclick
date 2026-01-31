@@ -5,7 +5,9 @@ import { contentTypeFieldRouter } from "./content-type-field";
 import { creatorRouter } from "./creator";
 import { fileRouter } from "./file";
 import { fileTagRouter } from "./file-tag";
+import { googleDriveRouter } from "./google-drive";
 import { originRouter } from "./origin";
+import { r2Router } from "./r2";
 import { requestRouter } from "./request";
 import { uploadRouter } from "./upload";
 import { userRouter } from "./user";
@@ -28,7 +30,9 @@ export const appRouter = router({
   creator: creatorRouter,
   file: fileRouter,
   fileTag: fileTagRouter,
+  googleDrive: googleDriveRouter,
   origin: originRouter,
+  r2: r2Router,
   upload: uploadRouter,
   user: userRouter,
   workflow: workflowRouter,

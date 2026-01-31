@@ -6,12 +6,15 @@ import { trpc } from "@/utils/trpc";
 import Link from "next/link";
 import { Button } from "@/components/base/buttons/button";
 import { Badge } from "@/components/base/badges/badges";
+import { Table, TableCard } from "@/components/application/table/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/base/input/input";
 import { Select } from "@/components/base/select/select";
-import { Plus, Edit01, Power01, SearchMd } from "@untitledui/icons";
+import { NewCreatorDrawer } from "@/components/creator/new-creator-drawer";
+import { Plus, Edit01, Power01, SearchMd, FilterLines } from "@untitledui/icons";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { Avatar } from "@/components/base/avatar/avatar";
 
 interface Creator {
   id: string;
@@ -75,9 +78,10 @@ export default function CriadoresPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
+  const [isNewDrawerOpen, setIsNewDrawerOpen] = useState(false);
   const limit = 20;
 
-  const { data, isLoading, isError } = useQuery(
+  const { data, isLoading } = useQuery(
     trpc.creator.list.queryOptions({
       search: search || undefined,
       type: typeFilter !== "all" ? typeFilter as any : undefined,
@@ -101,21 +105,29 @@ export default function CriadoresPage() {
     (toggleActiveMutation.mutate as any)({ id });
   };
 
+  const columns = [
+    { id: "name", label: "Nome" },
+    { id: "type", label: "Tipo" },
+    { id: "responsible", label: "Responsável" },
+    { id: "contact", label: "Contato" },
+    { id: "contract", label: "Contrato" },
+    { id: "status", label: "Status" },
+    ...(isAdmin ? [{ id: "actions", label: "Ações" }] : []),
+  ];
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Criadores</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-primary">Criadores</h1>
+          <p className="text-tertiary">
             Gerencie criadores de conteúdo, embaixadores e talentos.
           </p>
         </div>
         {isAdmin && (
-          <Link href={"/criadores/new" as any}>
-            <Button iconLeading={Plus}>
-              Novo Criador
-            </Button>
-          </Link>
+          <Button iconLeading={Plus} onClick={() => setIsNewDrawerOpen(true)}>
+            Novo Criador
+          </Button>
         )}
       </div>
 
@@ -132,6 +144,7 @@ export default function CriadoresPage() {
           />
         </div>
         <Select 
+          aria-label="Filtrar por tipo"
           selectedKey={typeFilter} 
           onSelectionChange={(key) => {
             if (key) {
@@ -140,6 +153,7 @@ export default function CriadoresPage() {
             }
           }}
           placeholder="Filtrar por tipo"
+          placeholderIcon={FilterLines}
           className="w-[180px]"
         >
           <Select.Item id="all" label="Todos os Tipos" />
@@ -151,125 +165,103 @@ export default function CriadoresPage() {
         </Select>
       </div>
 
-      <div className="rounded-md border">
-        <div className="relative w-full overflow-auto">
-          <table className="w-full caption-bottom text-sm">
-            <thead className="[&_tr]:border-b">
-              <tr className="border-b transition-colors hover:bg-muted/50">
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Nome</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tipo</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Responsável</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Contato</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Contrato</th>
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
-                {isAdmin && (
-                  <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">Ações</th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="[&_tr:last-child]:border-0">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b transition-colors hover:bg-muted/50">
-                    <td className="p-4"><Skeleton className="h-4 w-[150px]" /></td>
-                    <td className="p-4"><Skeleton className="h-5 w-[100px]" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[120px]" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[150px]" /></td>
-                    <td className="p-4"><Skeleton className="h-5 w-[80px]" /></td>
-                    <td className="p-4"><Skeleton className="h-5 w-[60px]" /></td>
-                    {isAdmin && <td className="p-4 text-right"><Skeleton className="ml-auto h-8 w-[80px]" /></td>}
-                  </tr>
-                ))
-              ) : isError ? (
-                <tr>
-                  <td colSpan={isAdmin ? 7 : 6} className="p-4 text-center text-red-500">
-                    Erro ao carregar criadores.
-                  </td>
-                </tr>
-              ) : data?.items && data.items.length > 0 ? (
-                data.items.map((creator: Creator) => {
-                  const contractStatus = getContractStatus(creator.contractStartDate, creator.contractEndDate);
-                  return (
-                    <tr key={creator.id} className="border-b transition-colors hover:bg-muted/50">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          {creator.imageUrl ? (
-                            <img 
-                              src={creator.imageUrl} 
-                              alt={creator.name}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                              {creator.name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <span className="font-medium">{creator.name}</span>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <Badge color={typeColors[creator.type]} type="pill-color" size="sm">
-                          {typeLabels[creator.type]}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-muted-foreground">
-                        {creator.responsible?.name || "-"}
-                      </td>
-                      <td className="p-4 text-muted-foreground">
-                        {creator.instagram ? (
-                          <span>@{creator.instagram.replace("@", "")}</span>
-                        ) : creator.email ? (
-                          <span>{creator.email}</span>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <Badge color={contractStatus.color} type="pill-color" size="sm">
-                          {contractStatus.label}
-                        </Badge>
-                      </td>
-                      <td className="p-4">
-                        <Badge color={creator.isActive ? "success" : "gray"} type="pill-color" size="sm">
-                          {creator.isActive ? "Ativo" : "Inativo"}
-                        </Badge>
-                      </td>
-                      {isAdmin && (
-                        <td className="p-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              color="tertiary" 
-                              size="sm"
-                              iconLeading={Power01}
-                              onClick={() => handleToggleActive(creator.id)}
-                              isDisabled={toggleActiveMutation.isPending}
-                              title={creator.isActive ? "Desativar" : "Ativar"}
-                              className={creator.isActive ? "text-green-600" : "text-muted-foreground"}
-                            />
-                            <Link href={`/criadores/${creator.id}/edit` as any}>
-                              <Button color="tertiary" size="sm" iconLeading={Edit01} />
-                            </Link>
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={isAdmin ? 7 : 6} className="p-4 text-center text-muted-foreground">
-                    Nenhum criador encontrado.
-                  </td>
-                </tr>
+      <TableCard.Root size="sm">
+        {isLoading ? (
+          <div className="p-6 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : (data?.items ?? []).length === 0 ? (
+          <div className="p-8 text-center text-tertiary">
+            Nenhum criador encontrado.
+          </div>
+        ) : (
+          <Table size="sm" aria-label="Criadores">
+            <Table.Header columns={columns}>
+              {(column) => (
+                <Table.Head 
+                  key={column.id} 
+                  id={column.id} 
+                  label={column.label}
+                  isRowHeader={column.id === "name"}
+                />
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </Table.Header>
+            <Table.Body items={data?.items ?? []}>
+              {(creator: Creator) => {
+                const contractStatus = getContractStatus(creator.contractStartDate, creator.contractEndDate);
+                return (
+                  <Table.Row key={creator.id} id={creator.id}>
+                    <Table.Cell>
+                      <div className="flex items-center gap-3">
+                        <Avatar 
+                          src={creator.imageUrl || undefined}
+                          initials={creator.name.charAt(0).toUpperCase()}
+                          size="sm"
+                        />
+                        <span className="font-medium text-primary">{creator.name}</span>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge color={typeColors[creator.type]} type="pill-color" size="sm">
+                        {typeLabels[creator.type]}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell>
+                      {creator.responsible?.name || "-"}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {creator.instagram ? (
+                        <span>@{creator.instagram.replace("@", "")}</span>
+                      ) : creator.email ? (
+                        <span>{creator.email}</span>
+                      ) : (
+                        "-"
+                      )}
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge color={contractStatus.color} type="pill-color" size="sm">
+                        {contractStatus.label}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge color={creator.isActive ? "success" : "gray"} type="pill-color" size="sm">
+                        {creator.isActive ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </Table.Cell>
+                    {isAdmin && (
+                      <Table.Cell>
+                        <div className="flex items-center gap-1">
+                          <Button 
+                            color="tertiary"
+                            size="sm"
+                            iconLeading={Power01}
+                            onClick={() => handleToggleActive(creator.id)}
+                            isDisabled={toggleActiveMutation.isPending}
+                            className={creator.isActive ? "text-fg-success-primary" : ""}
+                          />
+                          <Link href={`/criadores/${creator.id}/edit` as any}>
+                            <Button 
+                              color="tertiary"
+                              size="sm"
+                              iconLeading={Edit01}
+                            />
+                          </Link>
+                        </div>
+                      </Table.Cell>
+                    )}
+                  </Table.Row>
+                );
+              }}
+            </Table.Body>
+          </Table>
+        )}
+      </TableCard.Root>
 
       {data && data.total > limit && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-tertiary">
             Mostrando {((page - 1) * limit) + 1} a {Math.min(page * limit, data.total)} de {data.total} criadores
           </p>
           <div className="flex gap-2">
@@ -292,6 +284,11 @@ export default function CriadoresPage() {
           </div>
         </div>
       )}
+
+      <NewCreatorDrawer
+        open={isNewDrawerOpen}
+        onOpenChange={setIsNewDrawerOpen}
+      />
     </div>
   );
 }

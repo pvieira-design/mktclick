@@ -12,6 +12,7 @@ import { Select } from "@/components/base/select/select";
 import { Badge } from "@/components/base/badges/badges";
 
 import { SlideoutMenu } from "@/components/application/slideout-menus/slideout-menu";
+import { Tabs } from "@/components/application/tabs/tabs";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import {
   AlertDialog,
@@ -100,7 +101,7 @@ export default function ContentTypeWorkflowPage() {
   const createStepMutation = useMutation({
     ...(trpc.workflow.createStep.mutationOptions as any)(),
     onSuccess: () => {
-      toast.success("Step created");
+      toast.success("Etapa criada");
       queryClient.invalidateQueries({ queryKey: [["workflow", "getStepsByContentType"]] });
       closeStepDialog();
     },
@@ -110,7 +111,7 @@ export default function ContentTypeWorkflowPage() {
   const updateStepMutation = useMutation({
     ...(trpc.workflow.updateStep.mutationOptions as any)(),
     onSuccess: () => {
-      toast.success("Step updated");
+      toast.success("Etapa atualizada");
       queryClient.invalidateQueries({ queryKey: [["workflow", "getStepsByContentType"]] });
       closeStepDialog();
     },
@@ -120,7 +121,7 @@ export default function ContentTypeWorkflowPage() {
   const deleteStepMutation = useMutation({
     ...(trpc.workflow.deleteStep.mutationOptions as any)(),
     onSuccess: () => {
-      toast.success("Step deleted");
+      toast.success("Etapa excluída");
       queryClient.invalidateQueries({ queryKey: [["workflow", "getStepsByContentType"]] });
       setStepToDelete(null);
     },
@@ -281,13 +282,13 @@ export default function ContentTypeWorkflowPage() {
       <div className="rounded-xl bg-primary shadow-xs ring-1 ring-border-secondary">
         <div className="flex flex-row items-center justify-between px-6 pt-6">
           <div>
-            <h2 className="text-lg font-semibold text-primary">Workflow Steps</h2>
+            <h2 className="text-lg font-semibold text-primary">Etapas do Workflow</h2>
             <p className="text-sm text-tertiary mt-1">
-              Define the approval flow for this content type.
+              Defina o fluxo de aprovação para este tipo de conteúdo.
             </p>
           </div>
           <Button onClick={openCreateStepDialog} iconLeading={Plus}>
-            Add Step
+            Adicionar Etapa
           </Button>
         </div>
         <div className="px-6 pb-6 pt-4">
@@ -337,17 +338,17 @@ export default function ContentTypeWorkflowPage() {
                     <div className="flex gap-4 mt-2 text-xs text-tertiary flex-wrap">
                       {step.approverArea && (
                         <span>
-                          Approver: <strong>{step.approverArea.name}</strong>
+                          Aprovadores: <strong>{step.approverArea.name}</strong>
                           {step.approverPositions.length > 0 && (
-                            <> ({step.approverPositions.join(", ")})</>
+                            <> ({step.approverPositions.map(p => p === "HEAD" ? "Líder" : p === "COORDINATOR" ? "Coordenador" : "Membro").join(", ")})</>
                           )}
                         </span>
                       )}
                       {step.requiredFieldsToEnter.length > 0 && (
-                        <span>Entry fields: {step.requiredFieldsToEnter.length}</span>
+                        <span>Campos p/ entrar: {step.requiredFieldsToEnter.length}</span>
                       )}
                       {step.requiredFieldsToExit.length > 0 && (
-                        <span>Exit fields: {step.requiredFieldsToExit.length}</span>
+                        <span>Campos p/ sair: {step.requiredFieldsToExit.length}</span>
                       )}
                     </div>
                   </div>
@@ -371,7 +372,7 @@ export default function ContentTypeWorkflowPage() {
             </div>
           ) : (
             <div className="text-center py-8 text-tertiary">
-              No workflow steps defined. Add a step to get started.
+              Nenhuma etapa definida. Adicione uma etapa para começar.
             </div>
           )}
         </div>
@@ -390,10 +391,10 @@ export default function ContentTypeWorkflowPage() {
                 />
                 <div>
                   <h2 className="text-lg font-semibold text-primary">
-                    {editingStep ? "Edit Step" : "Add Step"}
+                    {editingStep ? "Editar Etapa" : "Nova Etapa"}
                   </h2>
                   <p className="text-sm text-tertiary mt-1">
-                    Configure the workflow step properties.
+                    Configure as propriedades desta etapa do workflow.
                   </p>
                 </div>
               </div>
@@ -401,27 +402,27 @@ export default function ContentTypeWorkflowPage() {
             <SlideoutMenu.Content>
               <form id="step-form" onSubmit={handleStepSubmit} className="space-y-4">
                 <Input
-                  label="Step Name"
+                  label="Nome da Etapa"
                   value={stepForm.name}
                   onChange={(value) => setStepForm({ ...stepForm, name: value })}
-                  placeholder="e.g. Design Review"
+                  placeholder="Ex: Revisão de Design"
                 />
 
                 <TextArea
-                  label="Description"
+                  label="Descrição"
                   value={stepForm.description}
                   onChange={(value) => setStepForm({ ...stepForm, description: value })}
-                  placeholder="What happens in this step..."
+                  placeholder="O que acontece nesta etapa..."
                   rows={2}
                 />
 
                 <Select
-                  label="Approver Area"
+                  label="Área Aprovadora"
                   selectedKey={stepForm.approverAreaId}
                   onSelectionChange={(key) => setStepForm({ ...stepForm, approverAreaId: key as string })}
-                  placeholder="Select area (optional)"
+                  placeholder="Selecione a área (opcional)"
                 >
-                  <Select.Item id="" label="No specific area" />
+                  <Select.Item id="" label="Sem área específica" />
                   {areas.map((area: Area) => (
                     <Select.Item key={area.id} id={area.id} label={area.name} />
                   ))}
@@ -430,83 +431,108 @@ export default function ContentTypeWorkflowPage() {
                 {stepForm.approverAreaId && (
                   <div className="space-y-2">
                     <label className="text-sm font-medium leading-none">
-                      Approver Positions
+                      Cargos que podem aprovar
                     </label>
-                    <div className="flex gap-4">
-                      {["HEAD", "COORDINATOR", "STAFF"].map((pos) => (
-                        <Checkbox
-                          key={pos}
-                          label={pos}
-                          isSelected={stepForm.approverPositions.includes(pos)}
-                          onChange={() => togglePosition(pos)}
-                        />
-                      ))}
+                    <div className="flex flex-wrap gap-2">
+                      {([
+                        { value: "HEAD", label: "Líder" },
+                        { value: "COORDINATOR", label: "Coordenador" },
+                        { value: "STAFF", label: "Membro" },
+                      ] as const).map(({ value, label }) => {
+                        const isActive = stepForm.approverPositions.includes(value);
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => togglePosition(value)}
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium cursor-pointer transition-colors ${
+                              isActive
+                                ? "bg-brand-primary_alt text-brand-secondary ring-1 ring-brand-secondary"
+                                :                                 "bg-secondary_alt text-tertiary ring-1 ring-border-secondary hover:bg-primary_hover hover:text-secondary cursor-pointer"
+                            }`}
+                          >
+                            {isActive && (
+                              <svg className="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none">
+                                <path d="M11.667 3.5L5.25 9.917 2.333 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                            {label}
+                          </button>
+                        );
+                      })}
                     </div>
                     <p className="text-xs text-tertiary">
-                      Any member with these positions can approve.
+                      Membros com esses cargos poderão aprovar esta etapa.
                     </p>
                   </div>
                 )}
 
                 {fields.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium leading-none">
-                      Required Fields to Enter Step
-                    </label>
-                    <div className="rounded-lg ring-1 ring-border-secondary p-3 space-y-2 max-h-32 overflow-y-auto">
-                      {fields.map((field: Field) => (
-                        <Checkbox
-                          key={field.id}
-                          label={field.label}
-                          isSelected={stepForm.requiredFieldsToEnter.includes(field.name)}
-                          onChange={() => toggleFieldInList(field.name, "enter")}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                  <Tabs>
+                    <Tabs.List
+                      items={[
+                        { id: "assigned-fields", label: "Campos da Etapa", badge: stepForm.assignedFields.length || undefined },
+                        { id: "enter-fields", label: "Obrigatórios para Entrar", badge: stepForm.requiredFieldsToEnter.length || undefined },
+                        { id: "exit-fields", label: "Obrigatórios para Sair", badge: stepForm.requiredFieldsToExit.length || undefined },
+                      ]}
+                      type="underline"
+                      size="sm"
+                    >
+                      {(item) => <Tabs.Item {...item} />}
+                    </Tabs.List>
+                    <Tabs.Panel id="assigned-fields" className="pt-3">
+                      <div className="rounded-lg ring-1 ring-border-secondary p-3 space-y-2 max-h-40 overflow-y-auto">
+                        {fields.map((field: Field) => {
+                          const assignedElsewhere = field.assignedStep && field.assignedStep.id !== editingStep?.id;
+                          return (
+                            <div key={field.id} className="flex items-center gap-2">
+                              <Checkbox
+                                label={field.label}
+                                isSelected={stepForm.assignedFields.includes(field.name)}
+                                onChange={() => toggleAssignedField(field.name)}
+                              />
+                              {assignedElsewhere && (
+                                <Badge color="gray" size="sm">
+                                  {field.assignedStep!.name}
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-tertiary mt-2">
+                        Campos atribuídos a esta etapa serão agrupados juntos no workflow.
+                      </p>
+                    </Tabs.Panel>
+                    <Tabs.Panel id="enter-fields" className="pt-3">
+                      <div className="rounded-lg ring-1 ring-border-secondary p-3 space-y-2 max-h-32 overflow-y-auto">
+                        {fields.map((field: Field) => (
+                          <Checkbox
+                            key={field.id}
+                            label={field.label}
+                            isSelected={stepForm.requiredFieldsToEnter.includes(field.name)}
+                            onChange={() => toggleFieldInList(field.name, "enter")}
+                          />
+                        ))}
+                      </div>
+                    </Tabs.Panel>
+                    <Tabs.Panel id="exit-fields" className="pt-3">
+                      <div className="rounded-lg ring-1 ring-border-secondary p-3 space-y-2 max-h-32 overflow-y-auto">
+                        {fields.map((field: Field) => (
+                          <Checkbox
+                            key={field.id}
+                            label={field.label}
+                            isSelected={stepForm.requiredFieldsToExit.includes(field.name)}
+                            onChange={() => toggleFieldInList(field.name, "exit")}
+                          />
+                        ))}
+                      </div>
+                    </Tabs.Panel>
+                  </Tabs>
                 )}
 
-                 {fields.length > 0 && (
-                   <div className="space-y-2">
-                     <label className="text-sm font-medium leading-none">
-                       Required Fields to Exit Step
-                     </label>
-                     <div className="rounded-lg ring-1 ring-border-secondary p-3 space-y-2 max-h-32 overflow-y-auto">
-                       {fields.map((field: Field) => (
-                         <Checkbox
-                           key={field.id}
-                           label={field.label}
-                           isSelected={stepForm.requiredFieldsToExit.includes(field.name)}
-                           onChange={() => toggleFieldInList(field.name, "exit")}
-                         />
-                       ))}
-                     </div>
-                   </div>
-                 )}
-
-                 {fields.length > 0 && (
-                   <div className="space-y-2">
-                     <label className="text-sm font-medium leading-none">
-                       Campos deste Step
-                     </label>
-                     <div className="rounded-lg ring-1 ring-border-secondary p-3 space-y-2 max-h-32 overflow-y-auto">
-                       {fields.map((field: Field) => (
-                         <Checkbox
-                           key={field.id}
-                           label={field.label}
-                           isSelected={stepForm.assignedFields.includes(field.name)}
-                           onChange={() => toggleAssignedField(field.name)}
-                         />
-                       ))}
-                     </div>
-                     <p className="text-xs text-tertiary">
-                       Fields assigned to this step will be grouped together in the workflow.
-                     </p>
-                   </div>
-                 )}
-
                  <Checkbox
-                   label="This is the final step (marks request as complete)"
+                   label="Esta é a etapa final (marca o request como concluído)"
                    isSelected={stepForm.isFinalStep}
                    onChange={(checked) => 
                      setStepForm({ ...stepForm, isFinalStep: checked === true })
@@ -516,7 +542,7 @@ export default function ContentTypeWorkflowPage() {
             </SlideoutMenu.Content>
             <SlideoutMenu.Footer className="flex items-center justify-end gap-3">
               <Button color="secondary" onClick={close}>
-                Cancel
+                Cancelar
               </Button>
               <Button
                 type="submit"
@@ -524,8 +550,8 @@ export default function ContentTypeWorkflowPage() {
                 isDisabled={createStepMutation.isPending || updateStepMutation.isPending}
               >
                 {(createStepMutation.isPending || updateStepMutation.isPending) 
-                  ? "Saving..." 
-                  : editingStep ? "Save Changes" : "Add Step"}
+                  ? "Salvando..." 
+                  : editingStep ? "Salvar Alterações" : "Adicionar Etapa"}
               </Button>
             </SlideoutMenu.Footer>
           </>
@@ -535,16 +561,16 @@ export default function ContentTypeWorkflowPage() {
       <AlertDialog open={!!stepToDelete} onOpenChange={(open) => !open && setStepToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete step?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir etapa?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove "{stepToDelete?.name}" from the workflow.
-              If requests are currently on this step, deletion will fail.
+              Isso removerá "{stepToDelete?.name}" do workflow.
+              Se existirem requests nesta etapa, a exclusão falhará.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteStep}>
-              Delete
+              Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

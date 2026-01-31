@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/base/buttons/button";
@@ -9,11 +9,22 @@ import { Badge } from "@/components/base/badges/badges";
 import { Table, TableCard } from "@/components/application/table/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Plus, Edit01, Trash01, Check, X } from "@untitledui/icons";
+import { Plus, Edit01, Trash01, SearchMd } from "@untitledui/icons";
+import { TagDrawer } from "@/components/tag/tag-drawer";
+import type { BadgeColors } from "@/components/base/badges/badge-types";
+
+type TagGroup = "FILE" | "REQUEST";
+
+const TAG_GROUP_LABELS: Record<TagGroup, string> = {
+  FILE: "Arquivos",
+  REQUEST: "Requests",
+};
 
 interface FileTag {
   id: string;
   name: string;
+  color: string;
+  group: TagGroup;
   createdAt: string;
   _count: {
     files: number;
@@ -22,36 +33,23 @@ interface FileTag {
 
 export default function AdminTagsPage() {
   const queryClient = useQueryClient();
-  const [newTagName, setNewTagName] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
+  const [search, setSearch] = useState("");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingTag, setEditingTag] = useState<{
+    id: string;
+    name: string;
+    color: string;
+    group: TagGroup;
+  } | null>(null);
 
   const { data, isLoading } = useQuery(trpc.fileTag.list.queryOptions());
 
-  const createMutation = useMutation({
-    ...(trpc.fileTag.create.mutationOptions as any)(),
-    onSuccess: () => {
-      toast.success("Tag criada com sucesso");
-      queryClient.invalidateQueries({ queryKey: [["fileTag", "list"]] });
-      setNewTagName("");
-    },
-    onError: (error: Error) => {
-      toast.error(`Erro: ${error.message}`);
-    },
-  });
-
-  const updateMutation = useMutation({
-    ...(trpc.fileTag.update.mutationOptions as any)(),
-    onSuccess: () => {
-      toast.success("Tag atualizada");
-      queryClient.invalidateQueries({ queryKey: [["fileTag", "list"]] });
-      setEditingId(null);
-      setEditingName("");
-    },
-    onError: (error: Error) => {
-      toast.error(`Erro: ${error.message}`);
-    },
-  });
+  const filteredItems = useMemo(() => {
+    const items = data?.items ?? [];
+    if (!search.trim()) return items;
+    const term = search.toLowerCase();
+    return items.filter((tag) => tag.name.toLowerCase().includes(term));
+  }, [data?.items, search]);
 
   const deleteMutation = useMutation({
     ...(trpc.fileTag.delete.mutationOptions as any)(),
@@ -64,34 +62,25 @@ export default function AdminTagsPage() {
     },
   });
 
-  const handleCreate = () => {
-    if (!newTagName.trim()) return;
-    (createMutation.mutate as any)({ name: newTagName.trim() });
-  };
-
-  const handleUpdate = (id: string) => {
-    if (!editingName.trim()) return;
-    (updateMutation.mutate as any)({ id, name: editingName.trim() });
-  };
-
   const handleDelete = (id: string) => {
     if (confirm("Tem certeza que deseja excluir esta tag?")) {
       (deleteMutation.mutate as any)({ id });
     }
   };
 
-  const startEditing = (tag: FileTag) => {
-    setEditingId(tag.id);
-    setEditingName(tag.name);
+  const openCreateDrawer = () => {
+    setEditingTag(null);
+    setIsDrawerOpen(true);
   };
 
-  const cancelEditing = () => {
-    setEditingId(null);
-    setEditingName("");
+  const openEditDrawer = (tag: FileTag) => {
+    setEditingTag({ id: tag.id, name: tag.name, color: tag.color, group: tag.group });
+    setIsDrawerOpen(true);
   };
 
   const columns = [
     { id: "name", label: "Nome" },
+    { id: "group", label: "Grupo" },
     { id: "usage", label: "Uso" },
     { id: "createdAt", label: "Criada em" },
     { id: "actions", label: "Ações" },
@@ -99,34 +88,29 @@ export default function AdminTagsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-primary">Gerenciar Tags</h1>
-        <p className="text-tertiary">
-          Crie e gerencie tags para organizar arquivos na biblioteca.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-primary">
+            Gerenciar Tags
+          </h1>
+          <p className="text-tertiary">
+            Crie e gerencie tags para organizar arquivos na biblioteca.
+          </p>
+        </div>
+        <Button iconLeading={Plus} onClick={openCreateDrawer}>
+          Nova Tag
+        </Button>
       </div>
 
-      <div className="flex items-end gap-3">
+      <div className="flex gap-4">
         <div className="flex-1 max-w-sm">
-          <label className="block text-sm font-medium text-secondary mb-1.5">
-            Nova Tag
-          </label>
           <Input
-            placeholder="Nome da tag..."
-            value={newTagName}
-            onChange={setNewTagName}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleCreate();
-            }}
+            icon={SearchMd}
+            placeholder="Buscar por nome da tag..."
+            value={search}
+            onChange={setSearch}
           />
         </div>
-        <Button
-          iconLeading={Plus}
-          onClick={handleCreate}
-          isDisabled={!newTagName.trim() || createMutation.isPending}
-        >
-          Criar Tag
-        </Button>
       </div>
 
       <TableCard.Root size="sm">
@@ -136,9 +120,11 @@ export default function AdminTagsPage() {
               <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>
-        ) : (data?.items ?? []).length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="p-8 text-center text-tertiary">
-            Nenhuma tag encontrada. Crie uma para começar.
+            {search.trim()
+              ? "Nenhuma tag encontrada para essa busca."
+              : "Nenhuma tag encontrada. Crie uma para começar."}
           </div>
         ) : (
           <Table size="sm" aria-label="Tags">
@@ -152,24 +138,20 @@ export default function AdminTagsPage() {
                 />
               )}
             </Table.Header>
-            <Table.Body items={data?.items ?? []}>
+            <Table.Body items={filteredItems}>
               {(tag: FileTag) => (
                 <Table.Row key={tag.id} id={tag.id}>
                   <Table.Cell>
-                    {editingId === tag.id ? (
-                      <Input
-                        value={editingName}
-                        onChange={setEditingName}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleUpdate(tag.id);
-                          if (e.key === "Escape") cancelEditing();
-                        }}
-                        className="max-w-[200px]"
-                        autoFocus
-                      />
-                    ) : (
-                      <span className="font-medium text-primary">{tag.name}</span>
-                    )}
+                    <Badge
+                      color={(tag.color || "gray") as BadgeColors}
+                      type="pill-color"
+                      size="sm"
+                    >
+                      {tag.name}
+                    </Badge>
+                  </Table.Cell>
+                  <Table.Cell className="text-tertiary">
+                    {TAG_GROUP_LABELS[tag.group] ?? tag.group}
                   </Table.Cell>
                   <Table.Cell>
                     <Badge
@@ -177,48 +159,34 @@ export default function AdminTagsPage() {
                       type="pill-color"
                       size="sm"
                     >
-                      {tag._count.files} arquivo{tag._count.files !== 1 ? "s" : ""}
+                      {tag._count.files} arquivo
+                      {tag._count.files !== 1 ? "s" : ""}
                     </Badge>
                   </Table.Cell>
                   <Table.Cell className="text-tertiary">
                     {new Date(tag.createdAt).toLocaleDateString("pt-BR")}
                   </Table.Cell>
                   <Table.Cell>
-                    {editingId === tag.id ? (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          color="tertiary"
-                          size="sm"
-                          iconLeading={Check}
-                          onClick={() => handleUpdate(tag.id)}
-                          isDisabled={updateMutation.isPending}
-                          className="text-fg-success-primary"
-                        />
-                        <Button
-                          color="tertiary"
-                          size="sm"
-                          iconLeading={X}
-                          onClick={cancelEditing}
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          color="tertiary"
-                          size="sm"
-                          iconLeading={Edit01}
-                          onClick={() => startEditing(tag)}
-                        />
-                        <Button
-                          color="tertiary"
-                          size="sm"
-                          iconLeading={Trash01}
-                          onClick={() => handleDelete(tag.id)}
-                          isDisabled={deleteMutation.isPending || tag._count.files > 0}
-                          className={tag._count.files === 0 ? "text-fg-error-primary" : ""}
-                        />
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        color="tertiary"
+                        size="sm"
+                        iconLeading={Edit01}
+                        onClick={() => openEditDrawer(tag)}
+                      />
+                      <Button
+                        color="tertiary"
+                        size="sm"
+                        iconLeading={Trash01}
+                        onClick={() => handleDelete(tag.id)}
+                        isDisabled={
+                          deleteMutation.isPending || tag._count.files > 0
+                        }
+                        className={
+                          tag._count.files === 0 ? "text-fg-error-primary" : ""
+                        }
+                      />
+                    </div>
                   </Table.Cell>
                 </Table.Row>
               )}
@@ -226,6 +194,12 @@ export default function AdminTagsPage() {
           </Table>
         )}
       </TableCard.Root>
+
+      <TagDrawer
+        open={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        editingTag={editingTag}
+      />
     </div>
   );
 }

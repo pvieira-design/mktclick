@@ -1,6 +1,7 @@
 import { config } from "dotenv";
 import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
+import { randomUUID } from "crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, FieldType, AreaPosition } from "./generated/client.js";
 
@@ -88,7 +89,77 @@ async function main() {
   console.log(`✓ Seeded ${Object.keys(areas).length} Areas`);
 
   // ============================================
-  // 4. CUSTOM FIELDS BY CONTENT TYPE
+  // 4. TEST USERS
+  // ============================================
+  const now = new Date();
+  
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@clickcannabis.com" },
+    update: { role: "ADMIN" },
+    create: {
+      id: randomUUID(),
+      email: "admin@clickcannabis.com",
+      name: "Admin User",
+      role: "ADMIN",
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "superadmin@clickcannabis.com" },
+    update: { role: "SUPER_ADMIN" },
+    create: {
+      id: randomUUID(),
+      email: "superadmin@clickcannabis.com",
+      name: "Super Admin User",
+      role: "SUPER_ADMIN",
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+  });
+
+  const user = await prisma.user.upsert({
+    where: { email: "user@clickcannabis.com" },
+    update: { role: "USER" },
+    create: {
+      id: randomUUID(),
+      email: "user@clickcannabis.com",
+      name: "Regular User",
+      role: "USER",
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+  });
+
+  // Create AreaMember records
+  await prisma.areaMember.upsert({
+    where: { userId_areaId: { userId: admin.id, areaId: areas["content-manager"]!.id } },
+    update: { position: AreaPosition.HEAD },
+    create: {
+      userId: admin.id,
+      areaId: areas["content-manager"]!.id,
+      position: AreaPosition.HEAD,
+    },
+  });
+
+  await prisma.areaMember.upsert({
+    where: { userId_areaId: { userId: user.id, areaId: areas["social-media"]!.id } },
+    update: { position: AreaPosition.STAFF },
+    create: {
+      userId: user.id,
+      areaId: areas["social-media"]!.id,
+      position: AreaPosition.STAFF,
+    },
+  });
+
+  console.log("✓ Seeded 3 test users");
+
+  // ============================================
+  // 5. CUSTOM FIELDS BY CONTENT TYPE
   // ============================================
   
   // Helper to create fields

@@ -8,7 +8,7 @@ import { Button } from "@/components/base/buttons/button";
 import { Input as UntitledInput } from "@/components/base/input/input";
 import { TextArea as UntitledTextArea } from "@/components/base/textarea/textarea";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+
 import { toast } from "sonner";
 import { ArrowLeft, Save01 } from "@untitledui/icons";
 
@@ -25,11 +25,11 @@ export default function NewContentTypePage() {
   const createMutation = useMutation({
     ...(trpc.contentType.create.mutationOptions as any)(),
     onSuccess: () => {
-      toast.success("Content Type created successfully");
+      toast.success("Tipo de conteúdo criado com sucesso");
       router.push("/admin/content-types" as any);
     },
     onError: (error: Error) => {
-      toast.error(`Error: ${error.message}`);
+      toast.error(`Erro: ${error.message}`);
     }
   });
 
@@ -72,25 +72,25 @@ export default function NewContentTypePage() {
           iconLeading={ArrowLeft}
         />
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">New Content Type</h1>
-          <p className="text-muted-foreground">Create a new content type definition.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Novo Tipo de Conteúdo</h1>
+          <p className="text-tertiary">Crie uma nova definição de tipo de conteúdo.</p>
         </div>
       </div>
 
-      <Card className="!overflow-visible">
+      <div className="rounded-xl bg-primary shadow-xs ring-1 ring-border-secondary overflow-visible">
         <form onSubmit={handleSubmit}>
-          <CardHeader>
-            <CardTitle>Content Type Details</CardTitle>
-            <CardDescription>
-              Define the properties for this content type.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 overflow-visible pb-6">
+          <div className="px-6 pt-6">
+            <h2 className="text-lg font-semibold text-primary">Detalhes do Tipo de Conteúdo</h2>
+            <p className="text-sm text-tertiary mt-1">
+              Defina as propriedades para este tipo de conteúdo.
+            </p>
+          </div>
+          <div className="space-y-4 overflow-visible px-6 pb-6 pt-4">
             <UntitledInput 
-              label="Name"
+              label="Nome"
               value={name} 
               onChange={handleNameChange} 
-              placeholder="e.g. Blog Post" 
+              placeholder="Ex: Post de Blog" 
               isRequired
             />
             
@@ -98,31 +98,31 @@ export default function NewContentTypePage() {
               label="Slug"
               value={slug} 
               onChange={handleSlugChange} 
-              placeholder="e.g. blog-post" 
+              placeholder="Ex: post-de-blog" 
               isRequired
-              hint="Unique identifier used in URLs and API calls."
+              hint="Identificador único usado em URLs e chamadas de API."
             />
 
             <UntitledTextArea 
-              label="Description"
+              label="Descrição"
               value={description} 
               onChange={setDescription} 
-              placeholder="Describe what this content type is used for..." 
+              placeholder="Descreva para que serve este tipo de conteúdo..." 
               rows={3}
             />
 
             <div className="grid grid-cols-2 gap-4">
               <UntitledInput 
-                label="Icon Name"
+                label="Nome do Ícone"
                 value={icon} 
                 onChange={setIcon} 
-                placeholder="e.g. file-text" 
-                hint="Lucide icon name (optional)."
+                placeholder="Ex: file-text" 
+                hint="Nome do ícone Lucide (opcional)."
               />
 
               <div className="space-y-1.5">
                 <UntitledInput 
-                  label="Color"
+                  label="Cor"
                   value={color} 
                   onChange={setColor} 
                   placeholder="#000000" 
@@ -136,13 +136,13 @@ export default function NewContentTypePage() {
                 />
               </div>
             </div>
-          </CardContent>
-          <CardFooter className="flex justify-end gap-2">
+          </div>
+          <div className="flex justify-end gap-3 border-t border-secondary px-6 py-4">
             <Button 
               href="/admin/content-types"
               color="tertiary"
             >
-              Cancel
+              Cancelar
             </Button>
             <Button 
               type="submit" 
@@ -151,11 +151,11 @@ export default function NewContentTypePage() {
               isLoading={createMutation.isPending}
               iconLeading={Save01}
             >
-              Create Content Type
+              Criar Tipo de Conteúdo
             </Button>
-          </CardFooter>
+          </div>
         </form>
-      </Card>
+      </div>
     </div>
   );
 }

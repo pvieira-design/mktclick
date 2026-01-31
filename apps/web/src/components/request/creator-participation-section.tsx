@@ -5,8 +5,10 @@ import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { Select } from "@/components/base/select/select";
+import { DatePicker } from "@/components/application/date-picker/date-picker";
 import { Plus, Trash01 } from "@untitledui/icons";
-import { Input as ShadcnInput } from "@/components/ui/input";
+import { getLocalTimeZone, parseDate, CalendarDate } from "@internationalized/date";
+import type { DateValue } from "react-aria-components";
 
 const creatorTypeLabels: Record<string, string> = {
   UGC_CREATOR: "UGC Creator",
@@ -38,8 +40,12 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-function formatDateForInput(date: Date): string {
-  return date.toISOString().split("T")[0];
+function dateToDateValue(date: Date): DateValue {
+  return new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
+}
+
+function dateValueToDate(dateValue: DateValue): Date {
+  return dateValue.toDate(getLocalTimeZone());
 }
 
 export function CreatorParticipationSection({
@@ -136,17 +142,19 @@ export function CreatorParticipationSection({
                     <label className="text-sm font-medium text-secondary mb-1.5 block">
                       Data da Diária *
                     </label>
-                    <ShadcnInput
-                      type="date"
-                      value={formatDateForInput(participation.participationDate)}
-                      onChange={(e) =>
-                        handleUpdateParticipation(
-                          index,
-                          "participationDate",
-                          new Date(e.target.value)
-                        )
-                      }
-                      disabled={disabled}
+                    <DatePicker
+                      aria-label="Data da Diária"
+                      value={dateToDateValue(participation.participationDate)}
+                      onChange={(dateValue) => {
+                        if (dateValue) {
+                          handleUpdateParticipation(
+                            index,
+                            "participationDate",
+                            dateValueToDate(dateValue)
+                          );
+                        }
+                      }}
+                      isDisabled={disabled}
                     />
                   </div>
 

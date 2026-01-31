@@ -22,8 +22,8 @@ export default function NewOriginPage() {
   const createMutation = useMutation({
     ...(trpc.origin.create.mutationOptions as any)(),
     onSuccess: () => {
-      toast.success("Origin created successfully");
-      router.push("/admin/origins" as any);
+       toast.success("Origem criada com sucesso");
+       router.push("/admin/origins" as any);
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`);
@@ -66,62 +66,62 @@ export default function NewOriginPage() {
         >
           <Button color="tertiary" size="sm" iconLeading={ArrowLeft} />
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">New Origin</h1>
-          <p className="text-muted-foreground">Create a new production origin.</p>
-        </div>
+         <div>
+           <h1 className="text-2xl font-bold tracking-tight">Nova Origem</h1>
+           <p className="text-muted-foreground">Crie uma nova origem de produção.</p>
+         </div>
       </div>
 
       <Card>
         <form onSubmit={handleSubmit}>
-          <CardHeader>
-            <CardTitle>Origin Details</CardTitle>
-            <CardDescription>
-              Define the properties for this origin.
-            </CardDescription>
-          </CardHeader>
+           <CardHeader>
+             <CardTitle>Detalhes da Origem</CardTitle>
+             <CardDescription>
+               Defina as propriedades desta origem.
+             </CardDescription>
+           </CardHeader>
           <CardContent className="space-y-4">
-            <Input 
-              label="Name"
-              value={name} 
-              onChange={handleNameChange} 
-              placeholder="e.g. Internal Team" 
-              isRequired 
-            />
+             <Input 
+               label="Nome"
+               value={name} 
+               onChange={handleNameChange} 
+               placeholder="Ex: Equipe Interna" 
+               isRequired 
+             />
             
-            <Input 
-              label="Slug"
-              value={slug} 
-              onChange={handleSlugChange} 
-              placeholder="e.g. internal-team" 
-              isRequired 
-              hint="Unique identifier used in URLs and API calls."
-            />
+             <Input 
+               label="Slug"
+               value={slug} 
+               onChange={handleSlugChange} 
+               placeholder="ex: equipe-interna" 
+               isRequired 
+               hint="Identificador único usado em URLs e chamadas de API."
+             />
 
-            <TextArea 
-              label="Description"
-              value={description} 
-              onChange={(value) => setDescription(value)} 
-              placeholder="Describe what this origin represents..." 
-              rows={3}
-            />
+             <TextArea 
+               label="Descrição"
+               value={description} 
+               onChange={(value) => setDescription(value)} 
+               placeholder="Descreva o que esta origem representa..." 
+               rows={3}
+             />
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
-            <Link 
-              href={"/admin/origins" as any}
-            >
-              <Button color="secondary">
-                Cancel
-              </Button>
-            </Link>
-            <Button 
-              type="submit" 
-              isDisabled={createMutation.isPending}
-              isLoading={createMutation.isPending}
-              iconLeading={Save01}
-            >
-              Create Origin
-            </Button>
+             <Link 
+               href={"/admin/origins" as any}
+             >
+               <Button color="secondary">
+                 Cancelar
+               </Button>
+             </Link>
+             <Button 
+               type="submit" 
+               isDisabled={createMutation.isPending}
+               isLoading={createMutation.isPending}
+               iconLeading={Save01}
+             >
+               Criar Origem
+             </Button>
           </CardFooter>
         </form>
       </Card>

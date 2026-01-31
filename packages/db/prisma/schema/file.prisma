@@ -1,25 +1,37 @@
 // File Library Models
 
+enum TagGroup {
+  FILE
+  REQUEST
+}
+
 model File {
   id           String   @id @default(cuid())
   name         String
   originalName String
   description  String?  @db.Text
   url          String
-  pathname     String   // Vercel Blob pathname
-  size         Int      // File size in bytes
+  pathname     String
+  size         Int
   mimeType     String
+  thumbnailUrl String?
   uploadedById String
+  creatorId    String?
+  originId     String?
   isArchived   Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // Relations
   uploadedBy User            @relation("FileUploader", fields: [uploadedById], references: [id])
+  creator    Creator?        @relation("FileCreator", fields: [creatorId], references: [id])
+  origin     Origin?         @relation("FileOrigin", fields: [originId], references: [id])
   tags       FileTagOnFile[]
   requests   RequestFile[]
 
   @@index([uploadedById])
+  @@index([creatorId])
+  @@index([originId])
   @@index([mimeType])
   @@index([isArchived])
   @@index([createdAt])
@@ -29,11 +41,14 @@ model File {
 model FileTag {
   id        String   @id @default(cuid())
   name      String   @unique
+  color     String   @default("gray")
+  group     TagGroup @default(FILE)
   createdAt DateTime @default(now())
 
   // Relations
   files FileTagOnFile[]
 
+  @@index([group])
   @@map("file_tag")
 }
 
