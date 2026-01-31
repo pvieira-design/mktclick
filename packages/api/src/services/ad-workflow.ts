@@ -4,7 +4,7 @@ import type { AdVideo, AdDeliverable } from "@marketingclickcannabis/db";
 /**
  * Type for AdVideo with deliverables relation
  */
-type AdVideoWithDeliverables = AdVideo & {
+export type AdVideoWithDeliverables = AdVideo & {
   deliverables: AdDeliverable[];
 };
 
@@ -12,7 +12,7 @@ type AdVideoWithDeliverables = AdVideo & {
  * Retorna o status "pronto" esperado para cada fase.
  * Usado para verificar se todos os videos estao prontos.
  */
-function getReadyStatusForPhase(phase: number): string {
+export function getReadyStatusForPhase(phase: number): string {
   switch (phase) {
     case 1:
       return "PRONTO";
@@ -34,7 +34,7 @@ function getReadyStatusForPhase(phase: number): string {
 /**
  * Valida requisitos para um video ficar PRONTO em cada fase.
  */
-function validateVideoReadyForPhase(
+export function validateVideoReadyForPhase(
   video: AdVideoWithDeliverables,
   phase: number
 ): string[] {

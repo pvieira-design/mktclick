@@ -1,28 +1,40 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdStatusBadge } from "@/components/ads/ad-status-badge";
 import { AdPhaseBadge } from "@/components/ads/ad-phase-badge";
-import { AdVideoCard } from "@/components/ads/ad-video-card";
 import {
   PRIORITY_LABELS,
   PRIORITY_COLORS,
 } from "@/components/ads/ad-constants";
+import { PhaseProgressBar } from "@/components/ads/workflow/phase-progress-bar";
+import { PhasePanel } from "@/components/ads/workflow/phase-panel";
 import { trpc } from "@/utils/trpc";
 import { ArrowLeft } from "@untitledui/icons";
 
 export default function AdProjectDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const queryClient = useQueryClient();
 
   const {
     data: project,
     isLoading,
     error,
+    refetch,
   } = useQuery(trpc.adProject.getById.queryOptions({ id }));
+
+  const { data: phaseStatus } = useQuery(
+    trpc.adProject.getPhaseStatus.queryOptions({ id })
+  );
+
+  const handleRefresh = () => {
+    refetch();
+    queryClient.invalidateQueries({ queryKey: [["adProject"]] });
+  };
 
   if (isLoading) {
     return (
@@ -39,6 +51,9 @@ export default function AdProjectDetailPage() {
             <Skeleton className="h-10 w-full rounded-md" />
             <Skeleton className="h-10 w-full rounded-md" />
           </div>
+        </div>
+        <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-border-secondary space-y-3">
+          <Skeleton className="h-12 w-full rounded-md" />
         </div>
         <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-border-secondary space-y-3">
           <Skeleton className="h-6 w-40 rounded-md" />
@@ -67,9 +82,10 @@ export default function AdProjectDetailPage() {
     return new Intl.DateTimeFormat("pt-BR").format(new Date(date));
   };
 
+  const isActive = project.status === "ACTIVE";
+
   return (
     <div className="space-y-6">
-      {/* Back link */}
       <Link
         href={"/ads-requests" as any}
         className="inline-flex items-center gap-1.5 text-sm text-tertiary hover:text-primary transition-colors"
@@ -78,7 +94,6 @@ export default function AdProjectDetailPage() {
         Voltar para lista
       </Link>
 
-      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-primary">
@@ -98,20 +113,8 @@ export default function AdProjectDetailPage() {
         </div>
       </div>
 
-      {/* Project Info Card */}
       <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-border-secondary space-y-4">
-        <h2 className="text-lg font-semibold text-primary">
-          Informacoes do Projeto
-        </h2>
-
-        <div>
-          <h3 className="text-sm font-medium text-secondary mb-1">Briefing</h3>
-          <p className="text-sm text-tertiary whitespace-pre-wrap">
-            {project.briefing}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t border-secondary">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <p className="text-xs text-quaternary">Tipo</p>
             <p className="text-sm font-medium text-primary">
@@ -145,26 +148,61 @@ export default function AdProjectDetailPage() {
         </div>
       </div>
 
-      {/* Videos Section */}
-      <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-border-secondary space-y-4">
-        <div className="flex items-center justify-between">
+      {isActive && (
+        <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-border-secondary">
+          <PhaseProgressBar
+            currentPhase={project.currentPhase}
+            totalVideos={project.videos.length}
+            videosReadyInCurrentPhase={phaseStatus?.videosReady ?? 0}
+          />
+        </div>
+      )}
+
+      {isActive && (
+        <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-border-secondary">
+          <PhasePanel
+            project={project}
+            currentPhase={project.currentPhase}
+            onRefresh={handleRefresh}
+          />
+        </div>
+      )}
+
+      {!isActive && (
+        <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-border-secondary space-y-4">
           <h2 className="text-lg font-semibold text-primary">
+            Briefing
+          </h2>
+          <p className="text-sm text-tertiary whitespace-pre-wrap">
+            {project.briefing}
+          </p>
+
+          <h2 className="text-lg font-semibold text-primary pt-4 border-t border-secondary">
             Videos ({project.videos.length})
           </h2>
+          {project.videos.length === 0 ? (
+            <p className="text-sm text-tertiary text-center py-4">
+              Nenhum video neste projeto
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {project.videos.map((video: any, index: number) => (
+                <div
+                  key={video.id}
+                  className="flex items-center gap-3 rounded-lg bg-secondary p-3"
+                >
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-secondary ring-1 ring-border-secondary">
+                    {index + 1}
+                  </span>
+                  <span className="text-sm font-medium text-primary">
+                    {video.nomeDescritivo}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-
-        {project.videos.length === 0 ? (
-          <div className="text-center py-8 text-tertiary">
-            <p>Nenhum video neste projeto</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {project.videos.map((video, index) => (
-              <AdVideoCard key={video.id} video={video} index={index} />
-            ))}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

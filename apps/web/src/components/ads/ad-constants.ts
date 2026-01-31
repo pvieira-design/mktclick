@@ -92,3 +92,109 @@ export const PRIORITY_COLORS: Record<string, string> = {
   HIGH: "text-error-primary",
   URGENT: "text-error-primary font-bold",
 };
+
+// === Video Phase Status Configuration ===
+
+export const VIDEO_PHASE_STATUS_CONFIG: Record<
+  string,
+  { label: string; color: string; bgColor: string; borderColor: string }
+> = {
+  PENDENTE: {
+    label: "Pendente",
+    color: "text-quaternary",
+    bgColor: "bg-secondary",
+    borderColor: "border-border-secondary",
+  },
+  EM_ANDAMENTO: {
+    label: "Em Andamento",
+    color: "text-brand-primary",
+    bgColor: "bg-brand-secondary",
+    borderColor: "border-brand-primary",
+  },
+  PRONTO: {
+    label: "Pronto",
+    color: "text-success-primary",
+    bgColor: "bg-success-secondary",
+    borderColor: "border-success-primary",
+  },
+  ELENCO: {
+    label: "Elenco",
+    color: "text-brand-primary",
+    bgColor: "bg-brand-secondary",
+    borderColor: "border-brand-primary",
+  },
+  PRE_PROD: {
+    label: "Pre-Producao",
+    color: "text-warning-primary",
+    bgColor: "bg-warning-secondary",
+    borderColor: "border-warning-primary",
+  },
+  EM_PRODUCAO: {
+    label: "Em Producao",
+    color: "text-brand-primary",
+    bgColor: "bg-brand-secondary",
+    borderColor: "border-brand-primary",
+  },
+  ENTREGUE: {
+    label: "Entregue",
+    color: "text-success-primary",
+    bgColor: "bg-success-secondary",
+    borderColor: "border-success-primary",
+  },
+  EM_REVISAO: {
+    label: "Em Revisao",
+    color: "text-warning-primary",
+    bgColor: "bg-warning-secondary",
+    borderColor: "border-warning-primary",
+  },
+  VALIDANDO: {
+    label: "Validando",
+    color: "text-brand-primary",
+    bgColor: "bg-brand-secondary",
+    borderColor: "border-brand-primary",
+  },
+  APROVADO: {
+    label: "Aprovado",
+    color: "text-success-primary",
+    bgColor: "bg-success-secondary",
+    borderColor: "border-success-primary",
+  },
+  NOMENCLATURA: {
+    label: "Nomenclatura",
+    color: "text-brand-primary",
+    bgColor: "bg-brand-secondary",
+    borderColor: "border-brand-primary",
+  },
+  PUBLICADO: {
+    label: "Publicado",
+    color: "text-success-primary",
+    bgColor: "bg-success-secondary",
+    borderColor: "border-success-primary",
+  },
+};
+
+// === Phase Details (for progress bar and panels) ===
+
+export const PHASE_DETAILS: Record<
+  number,
+  { label: string; description: string }
+> = {
+  1: { label: "Briefing", description: "Definicao do projeto e videos" },
+  2: {
+    label: "Roteiro",
+    description: "Roteiros e validacao compliance/medico",
+  },
+  3: {
+    label: "Elenco",
+    description: "Casting, storyboard e pre-producao",
+  },
+  4: { label: "Producao", description: "Gravacao e upload de hooks" },
+  5: {
+    label: "Revisao",
+    description: "Revisao de conteudo, design e compliance",
+  },
+  6: {
+    label: "Publicacao",
+    description: "Aprovacao final, nomenclatura e publicacao",
+  },
+};
