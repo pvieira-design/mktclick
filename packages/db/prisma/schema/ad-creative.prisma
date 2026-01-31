@@ -1,0 +1,18 @@
+// Ad Creative Media Models
+
+model AdCreativeMedia {
+  id        String   @id @default(cuid())
+  adId      String   @unique
+  adPrefix  String
+  fileId    String
+  linkedById String
+  createdAt DateTime @default(now())
+
+  // Relations
+  file     File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  linkedBy User @relation("AdCreativeLinker", fields: [linkedById], references: [id])
+
+  @@index([adPrefix])
+  @@index([fileId])
+  @@map("ad_creative_media")
+}

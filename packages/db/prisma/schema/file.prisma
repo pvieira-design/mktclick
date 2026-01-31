@@ -28,6 +28,7 @@ model File {
   origin     Origin?         @relation("FileOrigin", fields: [originId], references: [id])
   tags       FileTagOnFile[]
   requests   RequestFile[]
+  adCreatives AdCreativeMedia[]
 
   @@index([uploadedById])
   @@index([creatorId])
