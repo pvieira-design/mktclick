@@ -179,7 +179,7 @@ export async function advanceProjectPhase(projectId: string): Promise<void> {
     // Reset all videos' phaseStatus to PENDENTE
     await tx.adVideo.updateMany({
       where: { projectId },
-      data: { phaseStatus: "PENDENTE" },
+      data: { phaseStatus: "PENDENTE", currentPhase: { increment: 1 } },
     });
   });
 }
@@ -254,6 +254,26 @@ export async function regressVideo(
     );
   }
 
+  // Clear validation fields for target phase and all subsequent phases
+  const clearFields: Record<string, boolean> = {};
+  if (targetPhase <= 2) {
+    clearFields.validacaoRoteiroCompliance = false;
+    clearFields.validacaoRoteiroMedico = false;
+  }
+  if (targetPhase <= 3) {
+    clearFields.aprovacaoElenco = false;
+    clearFields.aprovacaoPreProducao = false;
+  }
+  if (targetPhase <= 5) {
+    clearFields.revisaoConteudo = false;
+    clearFields.revisaoDesign = false;
+    clearFields.validacaoFinalCompliance = false;
+    clearFields.validacaoFinalMedico = false;
+  }
+  if (targetPhase <= 6) {
+    clearFields.aprovacaoFinal = false;
+  }
+
   // Update video
   await db.adVideo.update({
     where: { id: videoId },
@@ -262,6 +282,7 @@ export async function regressVideo(
       phaseStatus: "PENDENTE",
       rejectionReason: reason,
       rejectedToPhase: targetPhase,
+      ...clearFields,
     },
   });
 }

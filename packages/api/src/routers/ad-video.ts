@@ -177,10 +177,30 @@ export const adVideoRouter = router({
         });
       }
 
-      return db.adVideo.update({
-        where: { id: input.id },
-        data: { phaseStatus: input.phaseStatus },
-      });
+       const result = await db.adVideo.update({
+         where: { id: input.id },
+         data: { phaseStatus: input.phaseStatus },
+       });
+
+       if (input.phaseStatus === "PUBLICADO") {
+         const updatedVideo = await db.adVideo.findUniqueOrThrow({
+           where: { id: input.id },
+           include: { project: { include: { videos: true } } },
+         });
+
+         const allPublished = updatedVideo.project.videos.every(
+           (v) => v.phaseStatus === "PUBLICADO"
+         );
+
+         if (allPublished && updatedVideo.project.currentPhase === 6) {
+           await db.adProject.update({
+             where: { id: updatedVideo.project.id },
+             data: { status: "COMPLETED" },
+           });
+         }
+       }
+
+       return result;
     }),
 
   markValidation: protectedProcedure
