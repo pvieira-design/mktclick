@@ -1,9 +1,22 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/base/buttons/button";
 import { AdStatusBadge } from "@/components/ads/ad-status-badge";
 import { AdPhaseBadge } from "@/components/ads/ad-phase-badge";
 import {
@@ -18,7 +31,10 @@ import { ArrowLeft } from "@untitledui/icons";
 export default function AdProjectDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const {
     data: project,
@@ -30,6 +46,27 @@ export default function AdProjectDetailPage() {
   const { data: phaseStatus } = useQuery(
     trpc.adProject.getPhaseStatus.queryOptions({ id })
   );
+
+  const cancelProject = useMutation({
+    ...trpc.adProject.cancel.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Projeto cancelado");
+      setShowCancelDialog(false);
+      queryClient.invalidateQueries({ queryKey: [["adProject"]] });
+      handleRefresh();
+    },
+    onError: (err: any) => toast.error(err.message || "Erro ao cancelar projeto"),
+  });
+
+  const deleteProject = useMutation({
+    ...trpc.adProject.delete.mutationOptions(),
+    onSuccess: () => {
+      toast.success("Projeto excluido");
+      setShowDeleteDialog(false);
+      router.push("/ads-requests" as any);
+    },
+    onError: (err: any) => toast.error(err.message || "Erro ao excluir projeto"),
+  });
 
   const handleRefresh = () => {
     refetch();
@@ -110,6 +147,26 @@ export default function AdProjectDetailPage() {
               </span>
             )}
           </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {project.status === "ACTIVE" && (
+            <Button
+              color="secondary-destructive"
+              size="sm"
+              onClick={() => setShowCancelDialog(true)}
+            >
+              Cancelar Projeto
+            </Button>
+          )}
+          {project.status === "DRAFT" && (
+            <Button
+              color="primary-destructive"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              Excluir Projeto
+            </Button>
+          )}
         </div>
       </div>
 
@@ -203,6 +260,40 @@ export default function AdProjectDetailPage() {
           )}
         </div>
       )}
+
+      <AlertDialog open={showCancelDialog} onOpenChange={(open) => !open && setShowCancelDialog(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar projeto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O projeto sera marcado como cancelado. Esta acao nao pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => cancelProject.mutate({ id })}>
+              Confirmar Cancelamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={(open) => !open && setShowDeleteDialog(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir projeto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O projeto sera excluido permanentemente. Esta acao nao pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteProject.mutate({ id })}>
+              Excluir Projeto
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

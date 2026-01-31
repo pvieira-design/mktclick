@@ -118,7 +118,7 @@ export function VideoRegressionDialog({
             }
             isDisabled={reason.length < 10 || regressMutation.isPending}
           >
-            Enviar de Volta
+            {regressMutation.isPending ? "Enviando..." : "Enviar de Volta"}
           </Button>
         </div>
       </div>
