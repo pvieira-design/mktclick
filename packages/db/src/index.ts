@@ -22,6 +22,13 @@ export {
   FieldType,
   CreatorType,
   TagGroup,
+  AdProjectStatus,
+  AdVideoPhaseStatus,
+  AdVideoTema,
+  AdVideoEstilo,
+  AdVideoFormato,
+  AdDeliverableTempo,
+  AdDeliverableTamanho,
 } from "../prisma/generated/enums";
 
 // Re-export types
@@ -39,4 +46,9 @@ export type {
   WorkflowStep,
   ContentTypeAreaPermission,
   Creator,
+  AdType,
+  AdProject,
+  AdVideo,
+  AdDeliverable,
+  AdCounter,
 } from "../prisma/generated/client";

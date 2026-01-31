@@ -75,6 +75,8 @@ async function main() {
     { name: "UGC Manager", slug: "ugc-manager", description: "Gestão de creators e influencers - Bruna Wright" },
     { name: "Compliance", slug: "compliance", description: "Validação legal e ANVISA" },
     { name: "Médico", slug: "medico", description: "Validação médica e CFM" },
+    { name: "Growth", slug: "growth", description: "Estratégia de crescimento e performance - Lucas Rouxinol" },
+    { name: "Copywriting", slug: "copywriting", description: "Redação publicitária e roteiros" },
   ];
 
   const areas: Record<string, { id: string }> = {};
@@ -89,7 +91,39 @@ async function main() {
   console.log(`✓ Seeded ${Object.keys(areas).length} Areas`);
 
   // ============================================
-  // 4. TEST USERS
+  // 4. ORIGIN CODES
+  // ============================================
+  const originCodes: Record<string, string> = {
+    "oslo": "OSLLO",
+    "interno": "CLICK",
+    "influencer": "LAGENCY",
+    "freelancer": "OUTRO",
+  };
+
+  for (const [slug, code] of Object.entries(originCodes)) {
+    await prisma.origin.updateMany({
+      where: { slug },
+      data: { code },
+    });
+  }
+
+  // Adicionar origin "Chamber" se nao existir
+  await prisma.origin.upsert({
+    where: { slug: "chamber" },
+    update: { code: "CHAMBER" },
+    create: {
+      name: "Chamber",
+      slug: "chamber",
+      description: "Agência Chamber",
+      code: "CHAMBER",
+      isActive: true,
+    },
+  });
+
+  console.log("✓ Seeded Origin codes for nomenclatura");
+
+  // ============================================
+  // 5. TEST USERS
   // ============================================
   const now = new Date();
   
@@ -159,7 +193,30 @@ async function main() {
   console.log("✓ Seeded 3 test users");
 
   // ============================================
-  // 5. CUSTOM FIELDS BY CONTENT TYPE
+  // 6. CREATOR CODES
+  // ============================================
+  const creatorCodes: Record<string, string> = {
+    "Leo do Taxi": "LEOTX",
+    "Pedro Machado": "PEDROM",
+    "Dr. Joao": "DRJOAO",
+    "Dr. Felipe": "DRFELIPE",
+    "Bruna Wright": "BRUNAWT",
+    "Rachel": "RACHEL",
+    "Irwen": "IRWEN",
+    "Babi Rosa": "BABIROSA",
+  };
+
+  for (const [name, code] of Object.entries(creatorCodes)) {
+    await prisma.creator.updateMany({
+      where: { name },
+      data: { code },
+    });
+  }
+
+  console.log("✓ Seeded Creator codes for nomenclatura");
+
+  // ============================================
+  // 7. CUSTOM FIELDS BY CONTENT TYPE
   // ============================================
   
   // Helper to create fields
@@ -584,14 +641,70 @@ async function main() {
 
   console.log("✓ Seeded Area Permissions");
 
+  // ============================================
+  // 8. AD TYPES
+  // ============================================
+  await prisma.adType.upsert({
+    where: { slug: "video-criativo" },
+    update: {},
+    create: {
+      name: "Video Criativo",
+      slug: "video-criativo",
+      description: "Video criativo para anuncios de performance (hooks, variacoes, nomenclatura)",
+      icon: "Film",
+      color: "#7C3AED",
+      isActive: true,
+    },
+  });
+
+  console.log("✓ Seeded AdType: Video Criativo");
+
+  // ============================================
+  // 9. AD COUNTER (singleton)
+  // ============================================
+  const existingCounter = await prisma.adCounter.findFirst();
+  if (!existingCounter) {
+    await prisma.adCounter.create({
+      data: {
+        currentValue: 730,
+      },
+    });
+    console.log("✓ Seeded AdCounter (starting at 730)");
+  } else {
+    console.log(`✓ AdCounter already exists (current value: ${existingCounter.currentValue})`);
+  }
+
+  // ============================================
+  // 10. PEDRO EM COMPLIANCE (HEAD)
+  // ============================================
+  const pedro = await prisma.user.findFirst({
+    where: { role: "SUPER_ADMIN", name: { contains: "Pedro" } },
+  });
+
+  if (pedro && areas["compliance"]) {
+    await prisma.areaMember.upsert({
+      where: { userId_areaId: { userId: pedro.id, areaId: areas["compliance"]!.id } },
+      update: { position: AreaPosition.HEAD },
+      create: {
+        userId: pedro.id,
+        areaId: areas["compliance"]!.id,
+        position: AreaPosition.HEAD,
+      },
+    });
+    console.log("✓ Pedro added to Compliance as HEAD");
+  }
+
   console.log("\n✅ Seed completed successfully!");
   console.log("\n📋 Summary:");
   console.log(`   - ${Object.keys(contentTypes).length} Content Types`);
-  console.log(`   - ${originData.length} Origins`);
+  console.log(`   - ${originData.length} Origins (with codes)`);
   console.log(`   - ${Object.keys(areas).length} Areas`);
   console.log("   - Custom Fields for each Content Type");
   console.log("   - Workflow Steps with approval rules");
   console.log("   - Area Permissions configured");
+  console.log("   - 1 AdType (Video Criativo)");
+  console.log("   - AdCounter initialized at 730");
+  console.log("   - Origin & Creator codes for nomenclatura");
 }
 
 main()
