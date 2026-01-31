@@ -2,12 +2,14 @@ import { env } from "@marketingclickcannabis/env/server";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../prisma/generated/client";
+import { queryAdsDb } from "./external-db";
 
 const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 export const db = prisma;
 export default prisma;
+export { queryAdsDb };
 
 // Re-export enums for use in other packages
 export {
