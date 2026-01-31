@@ -190,6 +190,7 @@ export function NewUserDrawer({ open, onOpenChange }: NewUserDrawerProps) {
                 <div className="flex gap-2 items-end">
                   <div className="flex-1">
                     <Select
+                      aria-label="Área"
                       selectedKey={selectedAreaId || null}
                       onSelectionChange={(key) => setSelectedAreaId((key as string) || "")}
                       placeholder="Selecione uma área..."
@@ -201,6 +202,7 @@ export function NewUserDrawer({ open, onOpenChange }: NewUserDrawerProps) {
                   </div>
                   <div className="w-[130px]">
                     <Select
+                      aria-label="Cargo"
                       selectedKey={selectedPosition}
                       onSelectionChange={(key) => setSelectedPosition(key as typeof selectedPosition)}
                     >

@@ -31,12 +31,15 @@ const fieldTypes = [
   { value: "TEXTAREA", label: "Área de Texto", description: "Campo de texto multilinha" },
   { value: "WYSIWYG", label: "Texto Rico", description: "Editor de texto rico (WYSIWYG)" },
   { value: "FILE", label: "Upload de Arquivo", description: "Anexo de arquivo" },
+  { value: "IMAGE", label: "Imagem", description: "Upload de imagem com preview" },
   { value: "DATE", label: "Data", description: "Seletor de data" },
   { value: "DATETIME", label: "Data e Hora", description: "Seletor de data e hora" },
-  { value: "SELECT", label: "Seleção", description: "Lista suspensa" },
+  { value: "SELECT", label: "Seleção", description: "Lista suspensa (uma opção)" },
+  { value: "MULTI_SELECT", label: "Seleção Múltipla", description: "Várias opções de uma lista" },
   { value: "NUMBER", label: "Número", description: "Campo numérico" },
   { value: "CHECKBOX", label: "Checkbox", description: "Sim/Não" },
   { value: "URL", label: "URL", description: "Link web" },
+  { value: "REPEATER", label: "Repetidor", description: "Grupo de sub-campos que se repete" },
   { value: "AD_REFERENCE", label: "Referência de Anúncio", description: "Referência a anúncio (em breve)", disabled: true },
 ];
 
@@ -55,12 +58,33 @@ interface Field {
    assignedStep: { id: string; name: string } | null;
  }
 
+interface SubFieldDef {
+  name: string;
+  label: string;
+  type: string;
+  options?: string[];
+}
+
+const REPEATER_SUB_TYPES = [
+  { value: "TEXT", label: "Texto" },
+  { value: "TEXTAREA", label: "Área de Texto" },
+  { value: "IMAGE", label: "Imagem" },
+  { value: "URL", label: "URL" },
+  { value: "NUMBER", label: "Número" },
+  { value: "SELECT", label: "Seleção" },
+  { value: "CHECKBOX", label: "Checkbox" },
+];
+
+const slugify = (text: string) =>
+  text.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+
 interface FieldFormData {
   name: string;
   label: string;
   fieldType: string;
   required: boolean;
   options: string;
+  subFields: SubFieldDef[];
   placeholder: string;
   helpText: string;
   defaultValue: string;
@@ -72,6 +96,7 @@ const initialFormData: FieldFormData = {
   fieldType: "TEXT",
   required: false,
   options: "",
+  subFields: [],
   placeholder: "",
   helpText: "",
   defaultValue: "",
@@ -138,7 +163,11 @@ export default function ContentTypeFieldsPage() {
     setEditingField(field);
     
     let optionsStr = "";
-    if (Array.isArray(field.options)) {
+    let subFieldsParsed: SubFieldDef[] = [];
+
+    if (field.fieldType === "REPEATER" && Array.isArray(field.options)) {
+      subFieldsParsed = field.options as SubFieldDef[];
+    } else if (Array.isArray(field.options)) {
       optionsStr = field.options.join("\n");
     }
 
@@ -148,6 +177,7 @@ export default function ContentTypeFieldsPage() {
       fieldType: field.fieldType,
       required: field.required,
       options: optionsStr,
+      subFields: subFieldsParsed,
       placeholder: field.placeholder || "",
       helpText: field.helpText || "",
       defaultValue: field.defaultValue || "",
@@ -164,9 +194,12 @@ export default function ContentTypeFieldsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const options = formData.fieldType === "SELECT" 
-      ? formData.options.split("\n").filter(o => o.trim())
-      : undefined;
+    const options =
+      formData.fieldType === "SELECT" || formData.fieldType === "MULTI_SELECT"
+        ? formData.options.split("\n").filter((o) => o.trim())
+        : formData.fieldType === "REPEATER"
+        ? formData.subFields.map((sf) => ({ ...sf, name: sf.name || slugify(sf.label) }))
+        : undefined;
 
     if (editingField) {
       (updateFieldMutation.mutate as any)({
@@ -391,18 +424,102 @@ export default function ContentTypeFieldsPage() {
                   </Select>
                 )}
 
-                 {formData.fieldType === "SELECT" && (
-                   <TextArea
-                     label="Opções"
-                     value={formData.options}
-                     onChange={(value) => setFormData({ ...formData, options: value })}
-                     placeholder="Opção 1&#10;Opção 2&#10;Opção 3"
-                     rows={4}
-                     hint="Uma opção por linha."
-                   />
-                 )}
+                 {(formData.fieldType === "SELECT" || formData.fieldType === "MULTI_SELECT") && (
+                    <TextArea
+                      label="Opções"
+                      value={formData.options}
+                      onChange={(value) => setFormData({ ...formData, options: value })}
+                      placeholder="Opção 1&#10;Opção 2&#10;Opção 3"
+                      rows={4}
+                      hint="Uma opção por linha."
+                    />
+                  )}
 
-                 {["TEXT", "TEXTAREA", "URL"].includes(formData.fieldType) && (
+                  {formData.fieldType === "REPEATER" && (
+                    <div className="space-y-3 rounded-lg border border-secondary p-4">
+                      <div>
+                        <p className="text-sm font-semibold text-primary">Sub-campos</p>
+                        <p className="text-xs text-tertiary">
+                          Defina os campos dentro de cada repetição.
+                        </p>
+                      </div>
+
+                      {formData.subFields.map((sf, idx) => (
+                        <div key={idx} className="space-y-2">
+                          <div className="flex items-end gap-2">
+                            <div className="flex-1">
+                              <Input
+                                label={idx === 0 ? "Rótulo" : undefined}
+                                value={sf.label}
+                                onChange={(value) => {
+                                  const updated = [...formData.subFields];
+                                  updated[idx] = { ...sf, label: value, name: slugify(value) };
+                                  setFormData({ ...formData, subFields: updated });
+                                }}
+                                placeholder="Ex: Texto do Slide"
+                              />
+                            </div>
+                            <div className="w-[140px]">
+                              <Select
+                                label={idx === 0 ? "Tipo" : undefined}
+                                aria-label="Tipo do sub-campo"
+                                selectedKey={sf.type}
+                                onSelectionChange={(key) => {
+                                  const updated = [...formData.subFields];
+                                  updated[idx] = { ...sf, type: key as string, options: key === "SELECT" ? sf.options : undefined };
+                                  setFormData({ ...formData, subFields: updated });
+                                }}
+                              >
+                                {REPEATER_SUB_TYPES.map((t) => (
+                                  <Select.Item key={t.value} id={t.value} label={t.label} />
+                                ))}
+                              </Select>
+                            </div>
+                            <Button
+                              type="button"
+                              color="tertiary-destructive"
+                              size="sm"
+                              iconLeading={Trash01}
+                              onClick={() => {
+                                const updated = formData.subFields.filter((_, i) => i !== idx);
+                                setFormData({ ...formData, subFields: updated });
+                              }}
+                            />
+                          </div>
+                          {sf.type === "SELECT" && (
+                            <TextArea
+                              value={(sf.options || []).join("\n")}
+                              onChange={(value) => {
+                                const updated = [...formData.subFields];
+                                updated[idx] = { ...sf, options: value.split("\n").filter((o) => o.trim()) };
+                                setFormData({ ...formData, subFields: updated });
+                              }}
+                              placeholder="Opção 1&#10;Opção 2"
+                              rows={2}
+                              hint="Opções do sub-campo (uma por linha)."
+                            />
+                          )}
+                        </div>
+                      ))}
+
+                      <Button
+                        type="button"
+                        color="secondary"
+                        size="sm"
+                        iconLeading={Plus}
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            subFields: [...formData.subFields, { name: "", label: "", type: "TEXT" }],
+                          });
+                        }}
+                      >
+                        Adicionar Sub-campo
+                      </Button>
+                    </div>
+                  )}
+
+                  {["TEXT", "TEXTAREA", "URL", "MULTI_SELECT"].includes(formData.fieldType) && (
                    <Input
                      label="Placeholder"
                      value={formData.placeholder}
@@ -418,14 +535,16 @@ export default function ContentTypeFieldsPage() {
                    placeholder="Instruções adicionais para os usuários..."
                  />
 
-                 <Input
-                   label="Valor Padrão"
-                   value={formData.defaultValue}
-                   onChange={(value) => setFormData({ ...formData, defaultValue: value })}
-                   placeholder="Valor padrão deste campo"
-                 />
+                  {formData.fieldType !== "REPEATER" && (
+                    <Input
+                      label="Valor Padrão"
+                      value={formData.defaultValue}
+                      onChange={(value) => setFormData({ ...formData, defaultValue: value })}
+                      placeholder="Valor padrão deste campo"
+                    />
+                  )}
 
-                 <Checkbox
+                  <Checkbox
                    label="Campo obrigatório"
                    isSelected={formData.required}
                    onChange={(checked) => 

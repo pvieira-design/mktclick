@@ -196,11 +196,12 @@ export default function AreaMembersPage() {
                <div className="space-y-2">
                  <span className="text-sm font-medium">Usuário</span>
                  <Select 
-                   selectedKey={selectedUserId} 
-                   onSelectionChange={(key) => setSelectedUserId(key as string)}
-                   placeholder="Selecione um usuário..."
-                   className="w-full"
-                 >
+                    aria-label="Usuário"
+                    selectedKey={selectedUserId} 
+                    onSelectionChange={(key) => setSelectedUserId(key as string)}
+                    placeholder="Selecione um usuário..."
+                    className="w-full"
+                  >
                    {isUsersLoading ? (
                      <Select.Item id="loading" label="Carregando..." isDisabled />
                    ) : usersData?.users && usersData.users.length > 0 ? (
@@ -215,10 +216,11 @@ export default function AreaMembersPage() {
                <div className="space-y-2">
                  <span className="text-sm font-medium">Cargo</span>
                  <Select 
-                   selectedKey={selectedPosition} 
-                   onSelectionChange={(key) => setSelectedPosition(key as string)}
-                   className="w-full"
-                 >
+                    aria-label="Cargo"
+                    selectedKey={selectedPosition} 
+                    onSelectionChange={(key) => setSelectedPosition(key as string)}
+                    className="w-full"
+                  >
                    <Select.Item id="HEAD" label="Líder (máx 1)" />
                    <Select.Item id="COORDINATOR" label="Coordenador (máx 1)" />
                    <Select.Item id="STAFF" label="Membro" />
@@ -275,11 +277,12 @@ export default function AreaMembersPage() {
                        <td className="p-4 text-muted-foreground">{member.user.email}</td>
                        <td className="p-4">
                          <Select
-                           selectedKey={member.position}
-                           onSelectionChange={(key) => handlePositionChange(member, key as string)}
-                           isDisabled={updatePositionMutation.isPending}
-                           className="w-[140px]"
-                         >
+                            aria-label="Cargo do membro"
+                            selectedKey={member.position}
+                            onSelectionChange={(key) => handlePositionChange(member, key as string)}
+                            isDisabled={updatePositionMutation.isPending}
+                            className="w-[140px]"
+                          >
                            <Select.Item id="HEAD" label="Líder" />
                            <Select.Item id="COORDINATOR" label="Coordenador" />
                            <Select.Item id="STAFF" label="Membro" />

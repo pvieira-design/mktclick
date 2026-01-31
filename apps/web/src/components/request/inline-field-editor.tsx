@@ -17,13 +17,23 @@ type FieldType =
   | "TEXTAREA"
   | "WYSIWYG"
   | "FILE"
+  | "IMAGE"
   | "DATE"
   | "DATETIME"
   | "SELECT"
+  | "MULTI_SELECT"
   | "NUMBER"
   | "CHECKBOX"
   | "URL"
+  | "REPEATER"
   | "AD_REFERENCE";
+
+interface SubFieldDef {
+  name: string;
+  label: string;
+  type: string;
+  options?: string[];
+}
 
 interface InlineFieldEditorProps {
   field: {
@@ -204,6 +214,20 @@ export function InlineFieldEditor({
         );
       case "SELECT":
         return val;
+      case "MULTI_SELECT":
+        return Array.isArray(val) ? val.join(", ") : val;
+      case "IMAGE":
+        return (
+          <img
+            src={val}
+            alt="Preview"
+            className="max-h-24 rounded-lg object-contain"
+          />
+        );
+      case "REPEATER": {
+        const items = Array.isArray(val) ? val : [];
+        return <span>{items.length} item(s)</span>;
+      }
       default:
         return val;
     }
@@ -265,6 +289,7 @@ export function InlineFieldEditor({
       case "SELECT":
         return (
           <Select
+            aria-label={field.label}
             selectedKey={localValue || ""}
             onSelectionChange={(key) => {
               const newValue = key as string;
@@ -279,6 +304,30 @@ export function InlineFieldEditor({
             ))}
           </Select>
         );
+
+      case "MULTI_SELECT": {
+        const multiOpts = field.options || [];
+        const selectedMulti: string[] = Array.isArray(localValue) ? localValue : [];
+        return (
+          <div className="space-y-2">
+            {multiOpts.map((opt) => (
+              <Checkbox
+                key={opt}
+                isSelected={selectedMulti.includes(opt)}
+                onChange={(checked) => {
+                  const newVals = checked
+                    ? [...selectedMulti, opt]
+                    : selectedMulti.filter((v) => v !== opt);
+                  setLocalValue(newVals);
+                  handleSave(newVals);
+                }}
+              >
+                {opt}
+              </Checkbox>
+            ))}
+          </div>
+        );
+      }
 
       case "DATE":
         return (
@@ -368,6 +417,137 @@ export function InlineFieldEditor({
             )}
           </div>
         );
+
+      case "IMAGE":
+        return (
+          <div className="space-y-2">
+            {localValue ? (
+              <div className="relative group inline-block">
+                <img
+                  src={localValue}
+                  alt={field.label}
+                  className="max-h-32 rounded-lg object-contain border border-secondary"
+                />
+                <Button
+                  size="sm"
+                  color="tertiary"
+                  className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-primary/80"
+                  onClick={() => {
+                    setLocalValue(null);
+                    handleSave(null);
+                  }}
+                >
+                  Remover
+                </Button>
+              </div>
+            ) : (
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    toast.info("Upload de imagem requer implementação adicional");
+                  }
+                }}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+            )}
+          </div>
+        );
+
+      case "REPEATER": {
+        const subFieldDefs: SubFieldDef[] = Array.isArray(field.options)
+          ? (field.options as unknown as SubFieldDef[])
+          : [];
+        const groups: Record<string, any>[] = Array.isArray(localValue) ? localValue : [];
+
+        const handleGroupChange = (groupIndex: number, subFieldName: string, newVal: any) => {
+          const updated = [...groups];
+          updated[groupIndex] = { ...updated[groupIndex], [subFieldName]: newVal };
+          setLocalValue(updated);
+        };
+
+        const addGroup = () => {
+          const emptyGroup: Record<string, any> = {};
+          subFieldDefs.forEach((sf) => {
+            emptyGroup[sf.name] = sf.type === "CHECKBOX" ? false : "";
+          });
+          setLocalValue([...groups, emptyGroup]);
+        };
+
+        const removeGroup = (index: number) => {
+          const updated = groups.filter((_, i) => i !== index);
+          setLocalValue(updated);
+        };
+
+        return (
+          <div className="space-y-3">
+            {groups.map((group, gIdx) => (
+              <div key={gIdx} className="rounded-lg border border-secondary p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-tertiary">#{gIdx + 1}</span>
+                  <Button size="sm" color="tertiary-destructive" onClick={() => removeGroup(gIdx)}>
+                    Remover
+                  </Button>
+                </div>
+                {subFieldDefs.map((sf) => {
+                  const sfValue = group[sf.name] ?? "";
+                  return (
+                    <div key={sf.name} className="space-y-1">
+                      <label className="text-xs font-medium text-secondary">{sf.label}</label>
+                      {sf.type === "TEXTAREA" ? (
+                        <TextArea
+                          value={sfValue || ""}
+                          onChange={(v) => handleGroupChange(gIdx, sf.name, v)}
+                          rows={2}
+                        />
+                      ) : sf.type === "CHECKBOX" ? (
+                        <Checkbox
+                          isSelected={!!sfValue}
+                          onChange={(c) => handleGroupChange(gIdx, sf.name, c === true)}
+                        />
+                      ) : sf.type === "SELECT" ? (
+                        <Select
+                          aria-label={sf.label}
+                          selectedKey={sfValue || null}
+                          onSelectionChange={(k) => handleGroupChange(gIdx, sf.name, k)}
+                          placeholder="Selecione..."
+                        >
+                          {(sf.options || []).map((opt) => (
+                            <Select.Item key={opt} id={opt} label={opt} />
+                          ))}
+                        </Select>
+                      ) : (
+                        <Input
+                          type={sf.type === "NUMBER" ? "number" : sf.type === "URL" ? "url" : "text"}
+                          value={sfValue || ""}
+                          onChange={(v) =>
+                            handleGroupChange(gIdx, sf.name, sf.type === "NUMBER" && v ? Number(v) : v)
+                          }
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+            <Button size="sm" color="secondary" onClick={addGroup}>
+              Adicionar Item
+            </Button>
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={() => handleSave(localValue)}
+                isLoading={saveStatus === "saving"}
+                isDisabled={saveStatus === "saving"}
+              >
+                Salvar
+              </Button>
+            </div>
+          </div>
+        );
+      }
 
       default:
         return (

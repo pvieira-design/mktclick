@@ -86,6 +86,7 @@ export default function UsersListPage() {
            />
         </div>
          <Select 
+           aria-label="Filtrar por função"
            selectedKey={roleFilter} 
            onSelectionChange={(key) => {
              if (key) {

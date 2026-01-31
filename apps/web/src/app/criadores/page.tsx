@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import Link from "next/link";
 import { Button } from "@/components/base/buttons/button";
 import { Badge } from "@/components/base/badges/badges";
 import { Table, TableCard } from "@/components/application/table/table";
@@ -11,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/base/input/input";
 import { Select } from "@/components/base/select/select";
 import { NewCreatorDrawer } from "@/components/creator/new-creator-drawer";
+import { EditCreatorDrawer } from "@/components/creator/edit-creator-drawer";
 import { Plus, Edit01, Power01, SearchMd, FilterLines } from "@untitledui/icons";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
@@ -79,6 +79,7 @@ export default function CriadoresPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [isNewDrawerOpen, setIsNewDrawerOpen] = useState(false);
+  const [editCreatorId, setEditCreatorId] = useState<string | null>(null);
   const limit = 20;
 
   const { data, isLoading } = useQuery(
@@ -112,7 +113,7 @@ export default function CriadoresPage() {
     { id: "contact", label: "Contato" },
     { id: "contract", label: "Contrato" },
     { id: "status", label: "Status" },
-    ...(isAdmin ? [{ id: "actions", label: "Ações" }] : []),
+    { id: "actions", label: "Ações" },
   ];
 
   return (
@@ -230,8 +231,8 @@ export default function CriadoresPage() {
                         {creator.isActive ? "Ativo" : "Inativo"}
                       </Badge>
                     </Table.Cell>
-                    {isAdmin && (
-                      <Table.Cell>
+                    <Table.Cell>
+                      {isAdmin && (
                         <div className="flex items-center gap-1">
                           <Button 
                             color="tertiary"
@@ -241,16 +242,15 @@ export default function CriadoresPage() {
                             isDisabled={toggleActiveMutation.isPending}
                             className={creator.isActive ? "text-fg-success-primary" : ""}
                           />
-                          <Link href={`/criadores/${creator.id}/edit` as any}>
-                            <Button 
-                              color="tertiary"
-                              size="sm"
-                              iconLeading={Edit01}
-                            />
-                          </Link>
+                          <Button 
+                            color="tertiary"
+                            size="sm"
+                            iconLeading={Edit01}
+                            onClick={() => setEditCreatorId(creator.id)}
+                          />
                         </div>
-                      </Table.Cell>
-                    )}
+                      )}
+                    </Table.Cell>
                   </Table.Row>
                 );
               }}
@@ -288,6 +288,14 @@ export default function CriadoresPage() {
       <NewCreatorDrawer
         open={isNewDrawerOpen}
         onOpenChange={setIsNewDrawerOpen}
+      />
+
+      <EditCreatorDrawer
+        creatorId={editCreatorId}
+        open={!!editCreatorId}
+        onOpenChange={(open) => {
+          if (!open) setEditCreatorId(null);
+        }}
       />
     </div>
   );

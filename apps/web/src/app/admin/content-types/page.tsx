@@ -82,6 +82,7 @@ export default function ContentTypesPage() {
           />
         </div>
         <Select 
+          aria-label="Filtrar por status"
           selectedKey={statusFilter}
           onSelectionChange={(key) => {
             if (key) {

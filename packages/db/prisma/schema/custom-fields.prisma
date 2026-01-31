@@ -1,16 +1,19 @@
 // Enum for Custom Field Types
 enum FieldType {
-  TEXT          // Short text input
-  TEXTAREA      // Long text input
-  WYSIWYG       // Rich text editor (Novel)
-  FILE          // File upload (Vercel Blob)
-  DATE          // Date picker
-  DATETIME      // DateTime picker
-  SELECT        // Dropdown with options
-  NUMBER        // Numeric input
-  CHECKBOX      // Boolean checkbox
-  URL           // URL/Link input
-  AD_REFERENCE  // Reference to Ad (future)
+  TEXT           // Short text input
+  TEXTAREA       // Long text input
+  WYSIWYG        // Rich text editor (Novel)
+  FILE           // File upload (Vercel Blob)
+  DATE           // Date picker
+  DATETIME       // DateTime picker
+  SELECT         // Dropdown with options (single)
+  MULTI_SELECT   // Multiple selection from options (checkbox group)
+  NUMBER         // Numeric input
+  CHECKBOX       // Boolean checkbox
+  URL            // URL/Link input
+  IMAGE          // Image upload with inline preview
+  REPEATER       // Repeatable group of sub-fields (options stores sub-field schema)
+  AD_REFERENCE   // Reference to Ad (future)
 }
 
 // ContentTypeField Model - Custom fields configuration per ContentType
