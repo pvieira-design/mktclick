@@ -1,10 +1,14 @@
 import { protectedProcedure, publicProcedure, router } from "../index";
+import { adDeliverableRouter } from "./ad-deliverable";
+import { adProjectRouter } from "./ad-project";
+import { adVideoRouter } from "./ad-video";
 import { adsRouter } from "./ads";
 import { areaRouter } from "./area";
 import { contentTypeRouter } from "./content-type";
 import { contentTypeFieldRouter } from "./content-type-field";
 import { creatorRouter } from "./creator";
 import { fileRouter } from "./file";
+import { fileFolderRouter } from "./file-folder";
 import { fileTagRouter } from "./file-tag";
 import { googleDriveRouter } from "./google-drive";
 import { originRouter } from "./origin";
@@ -24,6 +28,9 @@ export const appRouter = router({
       user: ctx.session.user,
     };
   }),
+  adDeliverable: adDeliverableRouter,
+  adProject: adProjectRouter,
+  adVideo: adVideoRouter,
   ads: adsRouter,
   area: areaRouter,
   request: requestRouter,
@@ -31,6 +38,7 @@ export const appRouter = router({
   contentTypeField: contentTypeFieldRouter,
   creator: creatorRouter,
   file: fileRouter,
+  fileFolder: fileFolderRouter,
   fileTag: fileTagRouter,
   googleDrive: googleDriveRouter,
   origin: originRouter,
