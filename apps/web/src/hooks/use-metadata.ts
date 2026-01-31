@@ -26,3 +26,15 @@ export function useOrigins() {
     error,
   };
 }
+
+export function useAreas() {
+  const { data, isLoading, error } = useQuery(
+    trpc.area.list.queryOptions()
+  );
+
+  return {
+    data: data?.items ?? [],
+    isLoading,
+    error,
+  };
+}

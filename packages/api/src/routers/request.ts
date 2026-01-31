@@ -24,6 +24,7 @@ import {
 const listInputSchema = z.object({
   status: z.string().optional(),
   contentType: z.string().optional(),
+  areaId: z.string().optional(),
   search: z.string().optional(),
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(100).default(20),
@@ -143,12 +144,17 @@ const getFieldVersionsInputSchema = z.object({
 
 export const requestRouter = router({
   list: protectedProcedure.input(listInputSchema).query(async ({ input }) => {
-    const { status, contentType, search, page, limit } = input;
+    const { status, contentType, areaId, search, page, limit } = input;
     const skip = (page - 1) * limit;
 
      const where = {
        ...(status && { status: status as RequestStatus }),
        ...(contentType && { contentTypeId: contentType }),
+       ...(areaId && {
+         contentType: {
+           areaPermissions: { some: { areaId } },
+         },
+       }),
        ...(search && {
          title: { contains: search, mode: "insensitive" as const },
        }),
