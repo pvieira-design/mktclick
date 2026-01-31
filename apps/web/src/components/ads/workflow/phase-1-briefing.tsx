@@ -143,7 +143,7 @@ export function Phase1Briefing({ project, onRefresh }: Phase1BriefingProps) {
             onClick={() => advancePhase.mutate({ id: project.id })}
             isDisabled={advancePhase.isPending}
           >
-            Aprovar Briefing e Avancar
+            {advancePhase.isPending ? "Aprovando..." : "Aprovar Briefing e Avancar"}
           </Button>
         </div>
       )}

@@ -123,7 +123,7 @@ export function Phase3Elenco({ project, onRefresh }: Phase3ElencoProps) {
             onClick={() => advancePhase.mutate({ id: project.id })}
             isDisabled={advancePhase.isPending}
           >
-            Avancar para Fase 4
+            {advancePhase.isPending ? "Avancando..." : "Avancar para Fase 4"}
           </Button>
         </div>
       )}

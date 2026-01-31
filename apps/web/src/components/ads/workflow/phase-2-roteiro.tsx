@@ -115,7 +115,7 @@ export function Phase2Roteiro({ project, onRefresh }: Phase2RoteiroProps) {
             onClick={() => advancePhase.mutate({ id: project.id })}
             isDisabled={advancePhase.isPending}
           >
-            Avancar para Fase 3
+            {advancePhase.isPending ? "Avancando..." : "Avancar para Fase 3"}
           </Button>
         </div>
       )}
