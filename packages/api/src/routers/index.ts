@@ -1,4 +1,5 @@
 import { protectedProcedure, publicProcedure, router } from "../index";
+import { adsRouter } from "./ads";
 import { areaRouter } from "./area";
 import { contentTypeRouter } from "./content-type";
 import { contentTypeFieldRouter } from "./content-type-field";
@@ -23,6 +24,7 @@ export const appRouter = router({
       user: ctx.session.user,
     };
   }),
+  ads: adsRouter,
   area: areaRouter,
   request: requestRouter,
   contentType: contentTypeRouter,
