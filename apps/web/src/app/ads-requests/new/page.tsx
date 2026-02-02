@@ -71,7 +71,7 @@ export default function NewAdProjectPage() {
   const handleSave = async (shouldSubmit: boolean) => {
     if (!validate()) return;
     if (shouldSubmit && videos.length === 0) {
-      toast.error("Adicione pelo menos 1 video para submeter");
+      toast.error("Adicione pelo menos 1 entrega para submeter");
       return;
     }
 
@@ -204,19 +204,19 @@ export default function NewAdProjectPage() {
       <div className="space-y-4 rounded-xl bg-primary p-6 shadow-xs ring-1 ring-border-secondary">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-primary">Videos</h2>
-            <p className="text-sm text-tertiary">Adicione os videos do projeto</p>
+            <h2 className="text-lg font-semibold text-primary">Entregas</h2>
+            <p className="text-sm text-tertiary">Adicione as entregas do projeto</p>
           </div>
           <Button color="secondary" size="sm" iconLeading={Plus} onClick={addVideo}>
-            Adicionar Video
+            Adicionar Entrega
           </Button>
         </div>
 
         {videos.length === 0 && (
           <div className="text-center py-8 text-tertiary">
-            <p>Nenhum video adicionado</p>
+            <p>Nenhuma entrega adicionada</p>
             <p className="text-sm text-quaternary mt-1">
-              Clique em &quot;Adicionar Video&quot; para comecar
+              Clique em &quot;Adicionar Entrega&quot; para comecar
             </p>
           </div>
         )}

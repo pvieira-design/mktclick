@@ -52,13 +52,13 @@ export function Phase1Briefing({ project, onRefresh }: Phase1BriefingProps) {
   const createVideo = useMutation({
     ...trpc.adVideo.create.mutationOptions(),
     onSuccess: () => {
-      toast.success("Video adicionado");
+      toast.success("Entrega adicionada");
       setShowAddVideo(false);
       setNewVideo({ nomeDescritivo: "", tema: "", estilo: "", formato: "" });
       queryClient.invalidateQueries({ queryKey: [["adProject"]] });
       onRefresh();
     },
-    onError: (err: any) => toast.error(err.message || "Erro ao adicionar video"),
+    onError: (err: any) => toast.error(err.message || "Erro ao adicionar entrega"),
   });
 
   const handleNomeChange = (value: string) => {
@@ -140,7 +140,7 @@ export function Phase1Briefing({ project, onRefresh }: Phase1BriefingProps) {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-semibold text-primary">
-            Videos no Projeto ({project.videos.length})
+            Entregas no Projeto ({project.videos.length})
           </h4>
           {(project.status === "DRAFT" || project.status === "ACTIVE") && !showAddVideo && (
             <Button
@@ -149,14 +149,14 @@ export function Phase1Briefing({ project, onRefresh }: Phase1BriefingProps) {
               iconLeading={Plus}
               onClick={() => setShowAddVideo(true)}
             >
-              Adicionar Video
+              Adicionar Entrega
             </Button>
           )}
         </div>
 
         {showAddVideo && (
           <div className="rounded-lg ring-1 ring-border-secondary p-4 space-y-4">
-            <h4 className="text-sm font-semibold text-primary">Novo Video</h4>
+            <h4 className="text-sm font-semibold text-primary">Nova Entrega</h4>
             <div>
               <Input
                 label="Nome Descritivo"
@@ -173,7 +173,7 @@ export function Phase1Briefing({ project, onRefresh }: Phase1BriefingProps) {
             <div className="grid grid-cols-3 gap-3">
               <Select
                 label="Tema"
-                aria-label="Tema do video"
+                aria-label="Tema da entrega"
                 selectedKey={newVideo.tema || undefined}
                 onSelectionChange={(value) => value && setNewVideo((prev) => ({ ...prev, tema: String(value) }))}
                 placeholder="Selecione"
@@ -184,7 +184,7 @@ export function Phase1Briefing({ project, onRefresh }: Phase1BriefingProps) {
               </Select>
               <Select
                 label="Estilo"
-                aria-label="Estilo do video"
+                aria-label="Estilo da entrega"
                 selectedKey={newVideo.estilo || undefined}
                 onSelectionChange={(value) => value && setNewVideo((prev) => ({ ...prev, estilo: String(value) }))}
                 placeholder="Selecione"
@@ -195,7 +195,7 @@ export function Phase1Briefing({ project, onRefresh }: Phase1BriefingProps) {
               </Select>
               <Select
                 label="Formato"
-                aria-label="Formato do video"
+                aria-label="Formato da entrega"
                 selectedKey={newVideo.formato || undefined}
                 onSelectionChange={(value) => value && setNewVideo((prev) => ({ ...prev, formato: String(value) }))}
                 placeholder="Selecione"
@@ -220,7 +220,7 @@ export function Phase1Briefing({ project, onRefresh }: Phase1BriefingProps) {
                 }
                 isDisabled={!newVideo.nomeDescritivo || !newVideo.tema || !newVideo.estilo || !newVideo.formato || createVideo.isPending}
               >
-                {createVideo.isPending ? "Salvando..." : "Salvar Video"}
+                {createVideo.isPending ? "Salvando..." : "Salvar Entrega"}
               </Button>
               <Button
                 size="sm"
@@ -238,7 +238,7 @@ export function Phase1Briefing({ project, onRefresh }: Phase1BriefingProps) {
 
         {project.videos.length === 0 ? (
           <p className="text-sm text-tertiary py-4 text-center">
-            Nenhum video adicionado
+            Nenhuma entrega adicionada
           </p>
         ) : (
           <div className="space-y-3">

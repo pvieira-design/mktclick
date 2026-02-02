@@ -179,7 +179,7 @@ export const PHASE_DETAILS: Record<
   number,
   { label: string; description: string }
 > = {
-  1: { label: "Briefing", description: "Definicao do projeto e videos" },
+  1: { label: "Briefing", description: "Definicao do projeto e entregas" },
   2: {
     label: "Roteiro",
     description: "Roteiros e validacao compliance/medico",

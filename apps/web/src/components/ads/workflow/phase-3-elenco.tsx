@@ -29,7 +29,7 @@ export function Phase3Elenco({ project, onRefresh }: Phase3ElencoProps) {
   const updateVideo = useMutation({
     ...trpc.adVideo.update.mutationOptions(),
     onSuccess: () => {
-      toast.success("Video atualizado");
+      toast.success("Entrega atualizada");
       queryClient.invalidateQueries({ queryKey: [["adProject"]] });
       onRefresh();
     },
@@ -77,14 +77,14 @@ export function Phase3Elenco({ project, onRefresh }: Phase3ElencoProps) {
           Fase 3: Elenco & Pre-Producao
         </h3>
         <p className="text-sm text-tertiary mt-1">
-          Progresso: {videosReady}/{project.videos.length} videos prontos
+          Progresso: {videosReady}/{project.videos.length} entregas prontas
         </p>
       </div>
 
       <div className="flex items-center gap-2 rounded-lg bg-warning-secondary p-3">
         <AlertTriangle className="h-4 w-4 text-warning-primary shrink-0" />
         <p className="text-xs text-warning-primary">
-          Lista de videos travada — nao eh possivel adicionar novos videos
+          Lista de entregas travada — nao eh possivel adicionar novas entregas
         </p>
       </div>
 

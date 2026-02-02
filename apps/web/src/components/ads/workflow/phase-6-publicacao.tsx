@@ -26,7 +26,7 @@ export function Phase6Publicacao({ project, onRefresh }: Phase6PublicacaoProps) 
   const approvePhase6 = useMutation({
     ...trpc.adVideo.approvePhase6.mutationOptions(),
     onSuccess: () => {
-      toast.success("Video aprovado! AD numbers atribuidos");
+      toast.success("Entrega aprovada! AD numbers atribuidos");
       queryClient.invalidateQueries({ queryKey: [["adProject"]] });
       onRefresh();
     },
@@ -46,7 +46,7 @@ export function Phase6Publicacao({ project, onRefresh }: Phase6PublicacaoProps) 
   const updatePhaseStatus = useMutation({
     ...trpc.adVideo.updatePhaseStatus.mutationOptions(),
     onSuccess: () => {
-      toast.success("Video marcado como publicado!");
+      toast.success("Entrega marcada como publicada!");
       queryClient.invalidateQueries({ queryKey: [["adProject"]] });
       onRefresh();
     },
@@ -74,7 +74,7 @@ export function Phase6Publicacao({ project, onRefresh }: Phase6PublicacaoProps) 
           Fase 6: Aprovacao & Publicacao
         </h3>
         <p className="text-sm text-tertiary mt-1">
-          Progresso: {videosPublicados}/{project.videos.length} videos publicados
+          Progresso: {videosPublicados}/{project.videos.length} entregas publicadas
         </p>
       </div>
 

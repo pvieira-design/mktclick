@@ -28,12 +28,12 @@ export function VideoRegressionDialog({
   const regressMutation = useMutation({
     ...trpc.adVideo.regress.mutationOptions(),
     onSuccess: () => {
-      toast.success("Video enviado de volta");
+      toast.success("Entrega enviada de volta");
       queryClient.invalidateQueries({ queryKey: [["adProject"]] });
       onClose();
       onRefresh();
     },
-    onError: (err: any) => toast.error(err.message || "Erro ao regredir video"),
+    onError: (err: any) => toast.error(err.message || "Erro ao regredir entrega"),
   });
 
   if (!isOpen) return null;
@@ -48,10 +48,10 @@ export function VideoRegressionDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-md rounded-xl bg-primary p-6 shadow-xl ring-1 ring-border-secondary">
         <h3 className="text-lg font-semibold text-primary">
-          Enviar Video de Volta
+          Enviar Entrega de Volta
         </h3>
         <p className="text-sm text-tertiary mt-1">
-          Video: {video.nomeDescritivo}
+          Entrega: {video.nomeDescritivo}
         </p>
         <p className="text-sm text-tertiary">
           Fase atual: {currentPhase} ({PHASE_CONFIG[currentPhase]?.label})
@@ -96,8 +96,8 @@ export function VideoRegressionDialog({
 
           <div className="rounded-lg bg-warning-secondary p-3">
             <p className="text-xs text-warning-primary">
-              O video voltara para a fase selecionada com status PENDENTE. O
-              projeto nao avancara ate este video voltar a PRONTO.
+              A entrega voltara para a fase selecionada com status PENDENTE. O
+              projeto nao avancara ate esta entrega voltar a PRONTO.
             </p>
           </div>
         </div>

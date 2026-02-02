@@ -75,7 +75,7 @@ export function AdProjectCard({ project }: AdProjectCardProps) {
       <div className="flex flex-wrap items-center gap-1.5 px-5 pb-4 text-sm text-tertiary">
         <span>{project.origin.name}</span>
         <span className="text-quaternary">·</span>
-        <span>{project._count.videos} {project._count.videos === 1 ? "video" : "videos"}</span>
+        <span>{project._count.videos} {project._count.videos === 1 ? "entrega" : "entregas"}</span>
         <span className="text-quaternary">·</span>
         <span>{project.createdBy.name || "Desconhecido"}</span>
       </div>

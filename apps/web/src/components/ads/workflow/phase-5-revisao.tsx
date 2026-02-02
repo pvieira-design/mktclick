@@ -63,7 +63,7 @@ export function Phase5Revisao({ project, onRefresh }: Phase5RevisaoProps) {
           Fase 5: Revisao & Validacao Final
         </h3>
         <p className="text-sm text-tertiary mt-1">
-          Progresso: {videosReady}/{project.videos.length} videos prontos
+          Progresso: {videosReady}/{project.videos.length} entregas prontas
         </p>
       </div>
 

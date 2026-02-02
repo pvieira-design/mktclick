@@ -48,7 +48,7 @@ export function Phase4Producao({ project, onRefresh }: Phase4ProducaoProps) {
           Fase 4: Producao & Entrega
         </h3>
         <p className="text-sm text-tertiary mt-1">
-          Progresso: {videosReady}/{project.videos.length} videos entregues
+          Progresso: {videosReady}/{project.videos.length} entregas concluidas
         </p>
       </div>
 

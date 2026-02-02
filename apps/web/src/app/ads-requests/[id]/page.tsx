@@ -235,11 +235,11 @@ export default function AdProjectDetailPage() {
           </p>
 
           <h2 className="text-lg font-semibold text-primary pt-4 border-t border-secondary">
-            Videos ({project.videos.length})
+            Entregas ({project.videos.length})
           </h2>
           {project.videos.length === 0 ? (
             <p className="text-sm text-tertiary text-center py-4">
-              Nenhum video neste projeto
+              Nenhuma entrega neste projeto
             </p>
           ) : (
             <div className="space-y-3">

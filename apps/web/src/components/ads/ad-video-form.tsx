@@ -41,7 +41,7 @@ export function AdVideoForm({ index, video, onChange, onRemove, errors }: AdVide
   return (
     <div className="rounded-lg ring-1 ring-border-secondary p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-primary">Video #{index + 1}</h4>
+        <h4 className="text-sm font-semibold text-primary">Entrega #{index + 1}</h4>
         <Button
           color="tertiary"
           size="sm"
@@ -75,7 +75,7 @@ export function AdVideoForm({ index, video, onChange, onRemove, errors }: AdVide
         <div className="grid grid-cols-3 gap-3">
           <Select
             label="Tema"
-            aria-label="Tema do video"
+            aria-label="Tema da entrega"
             selectedKey={video.tema || undefined}
             onSelectionChange={handleSelectChange("tema")}
             placeholder="Selecione"
@@ -87,7 +87,7 @@ export function AdVideoForm({ index, video, onChange, onRemove, errors }: AdVide
 
           <Select
             label="Estilo"
-            aria-label="Estilo do video"
+            aria-label="Estilo da entrega"
             selectedKey={video.estilo || undefined}
             onSelectionChange={handleSelectChange("estilo")}
             placeholder="Selecione"
@@ -99,7 +99,7 @@ export function AdVideoForm({ index, video, onChange, onRemove, errors }: AdVide
 
           <Select
             label="Formato"
-            aria-label="Formato do video"
+            aria-label="Formato da entrega"
             selectedKey={video.formato || undefined}
             onSelectionChange={handleSelectChange("formato")}
             placeholder="Selecione"

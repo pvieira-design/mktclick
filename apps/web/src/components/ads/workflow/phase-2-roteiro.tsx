@@ -68,13 +68,13 @@ export function Phase2Roteiro({ project, onRefresh }: Phase2RoteiroProps) {
   const createVideo = useMutation({
     ...trpc.adVideo.create.mutationOptions(),
     onSuccess: () => {
-      toast.success("Video adicionado");
+      toast.success("Entrega adicionada");
       setShowAddVideo(false);
       setNewVideo({ nomeDescritivo: "", tema: "", estilo: "", formato: "" });
       queryClient.invalidateQueries({ queryKey: [["adProject"]] });
       onRefresh();
     },
-    onError: (err: any) => toast.error(err.message || "Erro ao adicionar video"),
+    onError: (err: any) => toast.error(err.message || "Erro ao adicionar entrega"),
   });
 
   const handleNomeChange = (value: string) => {
@@ -100,7 +100,7 @@ export function Phase2Roteiro({ project, onRefresh }: Phase2RoteiroProps) {
             Fase 2: Roteiro & Validacao
           </h3>
           <p className="text-sm text-tertiary mt-1">
-            Progresso: {videosReady}/{project.videos.length} videos prontos
+            Progresso: {videosReady}/{project.videos.length} entregas prontas
           </p>
         </div>
         {project.status === "ACTIVE" && !showAddVideo && (
@@ -110,14 +110,15 @@ export function Phase2Roteiro({ project, onRefresh }: Phase2RoteiroProps) {
             iconLeading={Plus}
             onClick={() => setShowAddVideo(true)}
           >
-            Adicionar Video
+             Adicionar Entrega
+           
           </Button>
         )}
       </div>
 
       {showAddVideo && (
         <div className="rounded-lg ring-1 ring-border-secondary p-4 space-y-4">
-          <h4 className="text-sm font-semibold text-primary">Novo Video</h4>
+          <h4 className="text-sm font-semibold text-primary">Nova Entrega</h4>
           <div>
             <Input
               label="Nome Descritivo"
@@ -134,7 +135,7 @@ export function Phase2Roteiro({ project, onRefresh }: Phase2RoteiroProps) {
           <div className="grid grid-cols-3 gap-3">
             <Select
               label="Tema"
-              aria-label="Tema do video"
+               aria-label="Tema da entrega"
               selectedKey={newVideo.tema || undefined}
               onSelectionChange={(value) => value && setNewVideo((prev) => ({ ...prev, tema: String(value) }))}
               placeholder="Selecione"
@@ -145,7 +146,7 @@ export function Phase2Roteiro({ project, onRefresh }: Phase2RoteiroProps) {
             </Select>
             <Select
               label="Estilo"
-              aria-label="Estilo do video"
+               aria-label="Estilo da entrega"
               selectedKey={newVideo.estilo || undefined}
               onSelectionChange={(value) => value && setNewVideo((prev) => ({ ...prev, estilo: String(value) }))}
               placeholder="Selecione"
@@ -156,7 +157,7 @@ export function Phase2Roteiro({ project, onRefresh }: Phase2RoteiroProps) {
             </Select>
             <Select
               label="Formato"
-              aria-label="Formato do video"
+               aria-label="Formato da entrega"
               selectedKey={newVideo.formato || undefined}
               onSelectionChange={(value) => value && setNewVideo((prev) => ({ ...prev, formato: String(value) }))}
               placeholder="Selecione"
@@ -181,7 +182,7 @@ export function Phase2Roteiro({ project, onRefresh }: Phase2RoteiroProps) {
               }
               isDisabled={!newVideo.nomeDescritivo || !newVideo.tema || !newVideo.estilo || !newVideo.formato || createVideo.isPending}
             >
-              {createVideo.isPending ? "Salvando..." : "Salvar Video"}
+              {createVideo.isPending ? "Salvando..." : "Salvar Entrega"}
             </Button>
             <Button
               size="sm"
@@ -306,7 +307,7 @@ function VideoRoteiroCard({
                 value={roteiro}
                 onChange={(v: string) => setRoteiro(v)}
                 rows={4}
-                placeholder="Escreva o roteiro do video..."
+                placeholder="Escreva o roteiro da entrega..."
               />
               <div className="flex gap-2">
                 <Button
