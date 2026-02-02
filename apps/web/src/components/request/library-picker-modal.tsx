@@ -22,6 +22,8 @@ import {
   VideoRecorder,
   MusicNote01,
   FileQuestion02,
+  Folder,
+  ChevronRight,
 } from "@untitledui/icons";
 
 interface LibraryPickerModalProps {
@@ -39,6 +41,15 @@ interface FileItem {
   size: number;
   isArchived: boolean;
   tags: Array<{ tag: { id: string; name: string } }>;
+}
+
+interface FolderItem {
+  id: string;
+  name: string;
+  _count: {
+    children: number;
+    files: number;
+  };
 }
 
 function getFileTypeIcon(mimeType: string) {
@@ -66,12 +77,31 @@ export function LibraryPickerModal({
   const [search, setSearch] = useState("");
   const [localSelectedIds, setLocalSelectedIds] = useState<string[]>(selectedIds);
   const [page, setPage] = useState(1);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const limit = 20;
+
+  const isSearching = !!search;
+
+  const { data: foldersData } = useQuery({
+    ...trpc.fileFolder.list.queryOptions(
+      isSearching ? undefined : { parentId: currentFolderId ?? null }
+    ),
+    enabled: open,
+  });
+
+  const { data: breadcrumbsData } = useQuery({
+    ...trpc.fileFolder.getBreadcrumbs.queryOptions({ folderId: currentFolderId! }),
+    enabled: open && !!currentFolderId,
+  });
+
+  const folders = (foldersData?.items ?? []) as FolderItem[];
+  const breadcrumbs = breadcrumbsData ?? [];
 
   const { data, isLoading } = useQuery({
     ...trpc.file.list.queryOptions({
       search: search || undefined,
       isArchived: false,
+      folderId: isSearching ? undefined : currentFolderId,
       page,
       limit,
     }),
@@ -86,6 +116,16 @@ export function LibraryPickerModal({
     );
   };
 
+  const handleNavigateFolder = (folderId: string) => {
+    setCurrentFolderId(folderId);
+    setPage(1);
+  };
+
+  const handleNavigateRoot = () => {
+    setCurrentFolderId(null);
+    setPage(1);
+  };
+
   const handleConfirm = () => {
     onSelect(localSelectedIds);
   };
@@ -96,6 +136,7 @@ export function LibraryPickerModal({
   };
 
   const newSelectionCount = localSelectedIds.filter((id) => !selectedIds.includes(id)).length;
+  const hasNoContent = !isSearching && folders.length === 0 && (data?.items ?? []).length === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,6 +160,34 @@ export function LibraryPickerModal({
           />
         </div>
 
+        {!isSearching && currentFolderId && (
+          <div className="flex-shrink-0 flex items-center gap-1 pb-3 text-sm overflow-x-auto">
+            <button
+              type="button"
+              onClick={handleNavigateRoot}
+              className="text-tertiary hover:text-primary transition-colors whitespace-nowrap"
+            >
+              Biblioteca
+            </button>
+            {breadcrumbs.map((crumb) => (
+              <span key={crumb.id} className="flex items-center gap-1">
+                <ChevronRight className="h-3.5 w-3.5 text-quaternary flex-shrink-0" />
+                <button
+                  type="button"
+                  onClick={() => handleNavigateFolder(crumb.id)}
+                  className={`whitespace-nowrap ${
+                    crumb.id === currentFolderId
+                      ? "text-primary font-medium"
+                      : "text-tertiary hover:text-primary transition-colors"
+                  }`}
+                >
+                  {crumb.name}
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto min-h-[300px]">
           {isLoading ? (
             <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
@@ -126,14 +195,34 @@ export function LibraryPickerModal({
                 <Skeleton key={i} className="aspect-square rounded-lg" />
               ))}
             </div>
-          ) : (data?.items ?? []).length === 0 ? (
+          ) : hasNoContent ? (
             <div className="flex items-center justify-center h-full text-tertiary">
               Nenhum arquivo encontrado
             </div>
           ) : (
             <>
               <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                {(data?.items as FileItem[]).map((file) => {
+                {!isSearching && folders.map((folder) => (
+                  <button
+                    key={folder.id}
+                    type="button"
+                    onClick={() => handleNavigateFolder(folder.id)}
+                    className="flex flex-col overflow-hidden rounded-lg border-2 border-secondary hover:border-tertiary transition-all"
+                  >
+                    <div className="relative aspect-square bg-secondary flex items-center justify-center">
+                      <Folder className="h-10 w-10 text-quaternary" />
+                    </div>
+                    <div className="p-2 text-left">
+                      <p className="text-xs font-medium text-primary truncate">{folder.name}</p>
+                      <p className="text-xs text-tertiary">
+                        {folder._count.files} arquivo{folder._count.files !== 1 ? "s" : ""}
+                        {folder._count.children > 0 && `, ${folder._count.children} pasta${folder._count.children !== 1 ? "s" : ""}`}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+
+                {(data?.items as FileItem[])?.map((file) => {
                   const Icon = getFileTypeIcon(file.mimeType);
                   const isImage = file.mimeType.startsWith("image/");
                   const isSelected = localSelectedIds.includes(file.id);

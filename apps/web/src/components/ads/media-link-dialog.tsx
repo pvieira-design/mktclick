@@ -14,6 +14,8 @@ import {
   VideoRecorder,
   FileQuestion02,
   XClose,
+  Folder,
+  ChevronRight,
 } from "@untitledui/icons";
 import { ModalOverlay, Modal, Dialog } from "@/components/application/modals/modal";
 import { FileUpload } from "@/components/application/file-upload/file-upload-base";
@@ -60,11 +62,33 @@ export function MediaLinkDialog({
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [propagate, setPropagate] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+
+  const isSearching = !!search;
+
+  const { data: foldersData } = useQuery({
+    ...trpc.fileFolder.list.queryOptions(
+      isSearching ? undefined : { parentId: currentFolderId ?? null }
+    ),
+    enabled: open && tab === "library",
+  });
+
+  const { data: breadcrumbsData } = useQuery({
+    ...trpc.fileFolder.getBreadcrumbs.queryOptions({ folderId: currentFolderId! }),
+    enabled: open && tab === "library" && !!currentFolderId,
+  });
+
+  const folders = (foldersData?.items ?? []) as Array<{
+    id: string;
+    name: string;
+    _count: { children: number; files: number };
+  }>;
+  const breadcrumbs = breadcrumbsData ?? [];
 
   const { data: libraryData, isLoading: isLoadingLibrary } = useQuery({
     ...trpc.file.list.queryOptions({
       search: search || undefined,
-      type: "image",
+      folderId: isSearching ? undefined : currentFolderId,
       page,
       limit: 12,
     }),
@@ -223,18 +247,60 @@ export function MediaLinkDialog({
                       />
                     </div>
 
+                    {!isSearching && currentFolderId && (
+                      <div className="flex items-center gap-1 text-xs overflow-x-auto">
+                        <button
+                          type="button"
+                          onClick={() => { setCurrentFolderId(null); setPage(1); }}
+                          className="text-tertiary hover:text-primary transition-colors whitespace-nowrap"
+                        >
+                          Biblioteca
+                        </button>
+                        {breadcrumbs.map((crumb) => (
+                          <span key={crumb.id} className="flex items-center gap-1">
+                            <ChevronRight className="h-3 w-3 text-quaternary flex-shrink-0" />
+                            <button
+                              type="button"
+                              onClick={() => { setCurrentFolderId(crumb.id); setPage(1); }}
+                              className={`whitespace-nowrap ${
+                                crumb.id === currentFolderId
+                                  ? "text-primary font-medium"
+                                  : "text-tertiary hover:text-primary transition-colors"
+                              }`}
+                            >
+                              {crumb.name}
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
                     {isLoadingLibrary ? (
                       <div className="grid grid-cols-3 gap-2">
                         {Array.from({ length: 6 }).map((_, i) => (
                           <Skeleton key={i} className="aspect-square rounded-lg" />
                         ))}
                       </div>
-                    ) : items.length === 0 ? (
+                    ) : !isSearching && folders.length === 0 && items.length === 0 ? (
                       <div className="text-center py-8 text-sm text-tertiary">
                         Nenhum arquivo encontrado
                       </div>
                     ) : (
                       <div className="grid grid-cols-3 gap-2">
+                        {!isSearching && folders.map((folder) => (
+                          <button
+                            key={folder.id}
+                            type="button"
+                            onClick={() => { setCurrentFolderId(folder.id); setPage(1); }}
+                            className="aspect-square rounded-lg overflow-hidden bg-secondary flex flex-col items-center justify-center gap-1.5 ring-2 ring-transparent hover:ring-border-primary transition-all cursor-pointer"
+                          >
+                            <Folder className="h-8 w-8 text-quaternary" />
+                            <span className="text-xs font-medium text-primary truncate max-w-[90%] px-1">{folder.name}</span>
+                            <span className="text-[10px] text-tertiary">
+                              {folder._count.files} arquivo{folder._count.files !== 1 ? "s" : ""}
+                            </span>
+                          </button>
+                        ))}
                         {items.map((file) => {
                           const Icon = getFileTypeIcon(file.mimeType);
                           const isImg = file.mimeType.startsWith("image/");
