@@ -97,6 +97,21 @@ export const adProjectRouter = router({
               },
             },
           },
+          images: {
+            orderBy: { createdAt: "asc" },
+            include: {
+              file: {
+                select: {
+                  id: true,
+                  name: true,
+                  url: true,
+                  mimeType: true,
+                  size: true,
+                  thumbnailUrl: true,
+                },
+              },
+            },
+          },
         },
       });
 
@@ -119,6 +134,7 @@ export const adProjectRouter = router({
         briefing: z.string().min(10),
         deadline: z.coerce.date().optional(),
         priority: z.nativeEnum(Priority).optional(),
+        incluiPackFotos: z.boolean().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -135,6 +151,7 @@ export const adProjectRouter = router({
           status: "DRAFT",
           currentPhase: 1,
           createdById: userId,
+          incluiPackFotos: input.incluiPackFotos,
         },
       });
     }),
@@ -378,5 +395,76 @@ export const adProjectRouter = router({
         canAdvance: videosReady === videos.length && videos.length > 0,
         videos,
       };
+    }),
+
+  uploadPackImage: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string().cuid(),
+        fileId: z.string().cuid(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const project = await db.adProject.findUniqueOrThrow({
+        where: { id: input.projectId },
+      });
+
+      if (!project.incluiPackFotos) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Project does not have image pack enabled",
+        });
+      }
+
+      return db.adProjectImage.create({
+        data: {
+          projectId: input.projectId,
+          fileId: input.fileId,
+          uploadedById: userId,
+        },
+        include: {
+          file: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+              mimeType: true,
+              size: true,
+              thumbnailUrl: true,
+            },
+          },
+        },
+      });
+    }),
+
+  deletePackImage: protectedProcedure
+    .input(z.object({ id: z.string().cuid() }))
+    .mutation(async ({ input }) => {
+      return db.adProjectImage.delete({
+        where: { id: input.id },
+      });
+    }),
+
+  listPackImages: protectedProcedure
+    .input(z.object({ projectId: z.string().cuid() }))
+    .query(async ({ input }) => {
+      return db.adProjectImage.findMany({
+        where: { projectId: input.projectId },
+        orderBy: { createdAt: "asc" },
+        include: {
+          file: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+              mimeType: true,
+              size: true,
+              thumbnailUrl: true,
+            },
+          },
+        },
+      });
     }),
 });
