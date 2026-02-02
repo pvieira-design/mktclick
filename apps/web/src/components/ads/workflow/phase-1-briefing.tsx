@@ -9,10 +9,10 @@ import { Select } from "@/components/base/select/select";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { useAdPermission } from "@/hooks/use-ad-permission";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { VideoDetailCard } from "../video/video-detail-card";
-import { TEMA_LABELS, ESTILO_LABELS } from "../ad-constants";
+import { TEMA_LABELS, ESTILO_LABELS, FORMATO_LABELS, VIDEO_PHASE_STATUS_CONFIG } from "../ad-constants";
+import { VideoComments } from "../video/video-comments";
 import { trpc } from "@/utils/trpc";
-import { Plus } from "@untitledui/icons";
+import { CheckCircle, Plus } from "@untitledui/icons";
 
 interface Phase1BriefingProps {
   project: any;
@@ -71,15 +71,34 @@ export function Phase1Briefing({ project, onRefresh }: Phase1BriefingProps) {
     setNewVideo((prev) => ({ ...prev, nomeDescritivo: sanitized }));
   };
 
+  const updatePhaseStatus = useMutation({
+    ...trpc.adVideo.updatePhaseStatus.mutationOptions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [["adProject"]] });
+      onRefresh();
+    },
+    onError: (err: any) => toast.error(err.message || "Erro ao atualizar status"),
+  });
+
   const isDraft = project.status === "DRAFT";
   const canEdit = isDraft || project.currentPhase <= 2;
+  const videosReady = project.videos.filter(
+    (v: any) => v.phaseStatus === "PRONTO"
+  ).length;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-primary">
-          Fase 1: Briefing
-        </h3>
+        <div>
+          <h3 className="text-lg font-semibold text-primary">
+            Fase 1: Briefing
+          </h3>
+          {project.videos.length > 0 && (
+            <p className="text-sm text-tertiary mt-1">
+              Progresso: {videosReady}/{project.videos.length} entregas prontas
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -231,15 +250,78 @@ export function Phase1Briefing({ project, onRefresh }: Phase1BriefingProps) {
           </p>
         ) : (
           <div className="space-y-3">
-            {project.videos.map((video: any, index: number) => (
-              <VideoDetailCard
-                key={video.id}
-                video={video}
-                index={index}
-                project={project}
-                onRefresh={onRefresh}
-              />
-            ))}
+            {project.videos.map((video: any, index: number) => {
+              const isReady = video.phaseStatus === "PRONTO";
+              const hasAllFields = video.nomeDescritivo && video.tema && video.estilo && video.formato;
+              const statusConfig = VIDEO_PHASE_STATUS_CONFIG[video.phaseStatus] || VIDEO_PHASE_STATUS_CONFIG.PENDENTE;
+
+              return (
+                <div
+                  key={video.id}
+                  className={`rounded-lg border p-4 transition-all ${isReady ? "border-success-primary" : "border-border-secondary"}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary">
+                        {index + 1}
+                      </span>
+                      <div>
+                        <h4 className="text-sm font-semibold text-primary">
+                          {video.nomeDescritivo}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-tertiary">
+                            {TEMA_LABELS[video.tema] || video.tema}
+                          </span>
+                          <span className="text-xs text-quaternary">·</span>
+                          <span className="text-xs text-tertiary">
+                            {ESTILO_LABELS[video.estilo] || video.estilo}
+                          </span>
+                          <span className="text-xs text-quaternary">·</span>
+                          <span className="text-xs text-tertiary">
+                            {FORMATO_LABELS[video.formato] || video.formato}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {isReady ? (
+                        <span className="flex items-center gap-1 text-xs font-medium text-success-primary">
+                          <CheckCircle className="h-4 w-4" /> Pronto
+                        </span>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusConfig?.bgColor || ""} ${statusConfig?.color || ""}`}
+                        >
+                          {statusConfig?.label || video.phaseStatus}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {hasAllFields && !isReady && project.status === "ACTIVE" && (
+                    <div className="flex justify-end mt-3 pt-3 border-t border-secondary">
+                      <Button
+                        size="sm"
+                        color="primary"
+                        onClick={() =>
+                          updatePhaseStatus.mutate({
+                            id: video.id,
+                            phaseStatus: "PRONTO" as any,
+                          })
+                        }
+                        isDisabled={updatePhaseStatus.isPending}
+                      >
+                        {updatePhaseStatus.isPending ? "Marcando..." : "Marcar Pronto"}
+                      </Button>
+                    </div>
+                  )}
+
+                  <VideoComments videoId={video.id} />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

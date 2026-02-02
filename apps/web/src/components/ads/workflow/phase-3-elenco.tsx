@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { useAdPermission } from "@/hooks/use-ad-permission";
+import { VideoComments } from "../video/video-comments";
 import { trpc } from "@/utils/trpc";
 import { CheckCircle, AlertTriangle } from "@untitledui/icons";
 import { PHASE_CONFIG } from "../ad-constants";
@@ -268,6 +269,8 @@ function VideoElencoCard({
             </Button>
           )}
         </div>
+
+        <VideoComments videoId={video.id} />
       </div>
     </div>
   );

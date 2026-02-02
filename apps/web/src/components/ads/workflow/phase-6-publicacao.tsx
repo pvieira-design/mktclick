@@ -7,6 +7,7 @@ import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { useAdPermission } from "@/hooks/use-ad-permission";
 import { DeliverableList } from "../deliverable/deliverable-list";
+import { VideoComments } from "../video/video-comments";
 import { NomenclaturaPreview } from "../nomenclatura/nomenclatura-preview";
 import { NomenclaturaEditor } from "../nomenclatura/nomenclatura-editor";
 import { NomenclaturaCopy } from "../nomenclatura/nomenclatura-copy";
@@ -312,6 +313,8 @@ function VideoPublicacaoCard({
           )}
         </div>
       )}
+
+      <VideoComments videoId={video.id} />
     </div>
   );
 }

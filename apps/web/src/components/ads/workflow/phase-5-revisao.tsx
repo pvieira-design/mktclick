@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/base/buttons/button";
 import { useAdPermission } from "@/hooks/use-ad-permission";
 import { VideoRegressionDialog } from "../video/video-regression-dialog";
+import { VideoComments } from "../video/video-comments";
 import { DeliverableList } from "../deliverable/deliverable-list";
 import { trpc } from "@/utils/trpc";
 import { CheckCircle } from "@untitledui/icons";
@@ -221,6 +222,8 @@ export function Phase5Revisao({ project, onRefresh }: Phase5RevisaoProps) {
                   </Button>
                 </div>
               )}
+
+              <VideoComments videoId={video.id} />
             </div>
           );
         })}

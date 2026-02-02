@@ -2,6 +2,7 @@ import { protectedProcedure, publicProcedure, router } from "../index";
 import { adDeliverableRouter } from "./ad-deliverable";
 import { adProjectRouter } from "./ad-project";
 import { adVideoRouter } from "./ad-video";
+import { adVideoCommentRouter } from "./ad-video-comment";
 import { adsRouter } from "./ads";
 import { areaRouter } from "./area";
 import { contentTypeRouter } from "./content-type";
@@ -31,6 +32,7 @@ export const appRouter = router({
   adDeliverable: adDeliverableRouter,
   adProject: adProjectRouter,
   adVideo: adVideoRouter,
+  adVideoComment: adVideoCommentRouter,
   ads: adsRouter,
   area: areaRouter,
   request: requestRouter,

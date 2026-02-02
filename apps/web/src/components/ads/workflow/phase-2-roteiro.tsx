@@ -9,6 +9,7 @@ import { Select } from "@/components/base/select/select";
 import { TextArea } from "@/components/base/textarea/textarea";
 import { useAdPermission } from "@/hooks/use-ad-permission";
 import { VideoDetailCard } from "../video/video-detail-card";
+import { VideoComments } from "../video/video-comments";
 import { TEMA_LABELS, ESTILO_LABELS } from "../ad-constants";
 import { trpc } from "@/utils/trpc";
 import { CheckCircle, Plus } from "@untitledui/icons";
@@ -389,6 +390,8 @@ function VideoRoteiroCard({
             </Button>
           )}
         </div>
+
+        <VideoComments videoId={video.id} />
       </div>
     </div>
   );

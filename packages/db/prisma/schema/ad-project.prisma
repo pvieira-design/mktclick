@@ -184,6 +184,7 @@ model AdVideo {
   project      AdProject       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   criador      Creator?        @relation("AdVideoCriador", fields: [criadorId], references: [id])
   deliverables AdDeliverable[]
+  comments     AdVideoComment[]
 
   // Indexes
   @@index([projectId])
@@ -240,6 +241,25 @@ model AdProjectImage {
   @@index([projectId])
   @@index([fileId])
   @@map("ad_project_image")
+}
+
+model AdVideoComment {
+  id           String   @id @default(cuid())
+  videoId      String
+  userId       String
+  content      String   @db.Text
+  projectPhase Int      // Fase do projeto no momento do comentario
+  createdAt    DateTime @default(now())
+
+  // Relations
+  video AdVideo @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user  User    @relation("AdVideoCommentAuthor", fields: [userId], references: [id])
+
+  // Indexes
+  @@index([videoId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("ad_video_comment")
 }
 
 model AdCounter {

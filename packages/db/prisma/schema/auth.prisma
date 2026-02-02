@@ -32,6 +32,7 @@ model User {
          adCreativeLinks    AdCreativeMedia[] @relation("AdCreativeLinker")
          adProjects         AdProject[] @relation("AdProjectCreator")
          uploadedProjectImages AdProjectImage[] @relation("AdProjectImageUploader")
+         adVideoComments    AdVideoComment[] @relation("AdVideoCommentAuthor")
 
     @@map("user")
 }

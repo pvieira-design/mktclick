@@ -7,6 +7,7 @@ import { Button } from "@/components/base/buttons/button";
 import { useAdPermission } from "@/hooks/use-ad-permission";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { DeliverableList } from "../deliverable/deliverable-list";
+import { VideoComments } from "../video/video-comments";
 import { FileUpload, getReadableFileSize } from "@/components/application/file-upload/file-upload-base";
 import { trpc } from "@/utils/trpc";
 import { CheckCircle, Image01, Trash01 } from "@untitledui/icons";
@@ -168,6 +169,8 @@ export function Phase4Producao({ project, onRefresh }: Phase4ProducaoProps) {
                   </Button>
                 </div>
               )}
+
+              <VideoComments videoId={video.id} />
             </div>
           );
         })}
