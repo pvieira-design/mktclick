@@ -84,6 +84,7 @@ export default function NewAdProjectPage() {
         briefing,
         deadline: deadline ? new Date(deadline) : undefined,
         priority: priority ? (priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT") : undefined,
+        incluiPackFotos,
       });
 
        for (const video of videos) {
@@ -183,6 +184,16 @@ export default function NewAdProjectPage() {
             <Select.Item id="URGENT" label="Urgente" />
           </Select>
         </div>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={incluiPackFotos}
+            onChange={(e) => setIncluiPackFotos(e.target.checked)}
+            className="h-4 w-4 rounded"
+          />
+          <span className="text-sm text-primary">Incluir pack de fotos da diaria</span>
+        </label>
       </div>
 
       <div className="space-y-4 rounded-xl bg-primary p-6 shadow-xs ring-1 ring-border-secondary">

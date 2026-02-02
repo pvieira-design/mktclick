@@ -26,7 +26,8 @@ import {
 import { PhaseProgressBar } from "@/components/ads/workflow/phase-progress-bar";
 import { PhasePanel } from "@/components/ads/workflow/phase-panel";
 import { trpc } from "@/utils/trpc";
-import { ArrowLeft } from "@untitledui/icons";
+import { ArrowLeft, Image01 } from "@untitledui/icons";
+import { getReadableFileSize } from "@/components/application/file-upload/file-upload-base";
 
 export default function AdProjectDetailPage() {
   const params = useParams();
@@ -258,6 +259,45 @@ export default function AdProjectDetailPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {project.status === "COMPLETED" && project.incluiPackFotos && project.images && project.images.length > 0 && (
+        <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-border-secondary space-y-4">
+          <div className="flex items-center gap-2">
+            <Image01 className="h-5 w-5 text-tertiary" />
+            <h2 className="text-lg font-semibold text-primary">
+              Pack de Fotos ({project.images.length})
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {project.images.map((img: any) => (
+              <div
+                key={img.id}
+                className="rounded-lg overflow-hidden bg-secondary ring-1 ring-border-secondary"
+              >
+                {img.file.mimeType?.startsWith("image/") ? (
+                  <img
+                    src={img.file.url}
+                    alt={img.file.name}
+                    className="aspect-square w-full object-cover"
+                  />
+                ) : (
+                  <div className="aspect-square w-full flex items-center justify-center">
+                    <Image01 className="h-8 w-8 text-quaternary" />
+                  </div>
+                )}
+                <div className="px-2 py-1.5">
+                  <p className="text-xs font-medium text-primary truncate">
+                    {img.file.name}
+                  </p>
+                  <p className="text-[10px] text-tertiary">
+                    {getReadableFileSize(img.file.size)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
