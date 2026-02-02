@@ -4,13 +4,13 @@ import { Input } from "@/components/base/input/input";
 import { Select } from "@/components/base/select/select";
 import { Button } from "@/components/base/buttons/button";
 import { Trash01 } from "@untitledui/icons";
-import { TEMA_LABELS, ESTILO_LABELS, FORMATO_LABELS } from "@/components/ads/ad-constants";
+import { TEMA_LABELS, ESTILO_LABELS } from "@/components/ads/ad-constants";
 
 export interface VideoFormData {
   nomeDescritivo: string;
   tema: string;
   estilo: string;
-  formato: string;
+  formato?: string;
 }
 
 interface AdVideoFormProps {
@@ -72,43 +72,31 @@ export function AdVideoForm({ index, video, onChange, onRemove, errors }: AdVide
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <Select
-            label="Tema"
-            aria-label="Tema da entrega"
-            selectedKey={video.tema || undefined}
-            onSelectionChange={handleSelectChange("tema")}
-            placeholder="Selecione"
-          >
-            {Object.entries(TEMA_LABELS).map(([key, label]) => (
-              <Select.Item key={key} id={key} label={label} />
-            ))}
-          </Select>
+         <div className="grid grid-cols-2 gap-3">
+           <Select
+             label="Tema"
+             aria-label="Tema da entrega"
+             selectedKey={video.tema || undefined}
+             onSelectionChange={handleSelectChange("tema")}
+             placeholder="Selecione"
+           >
+             {Object.entries(TEMA_LABELS).map(([key, label]) => (
+               <Select.Item key={key} id={key} label={label} />
+             ))}
+           </Select>
 
-          <Select
-            label="Estilo"
-            aria-label="Estilo da entrega"
-            selectedKey={video.estilo || undefined}
-            onSelectionChange={handleSelectChange("estilo")}
-            placeholder="Selecione"
-          >
-            {Object.entries(ESTILO_LABELS).map(([key, label]) => (
-              <Select.Item key={key} id={key} label={label} />
-            ))}
-          </Select>
-
-          <Select
-            label="Formato"
-            aria-label="Formato da entrega"
-            selectedKey={video.formato || undefined}
-            onSelectionChange={handleSelectChange("formato")}
-            placeholder="Selecione"
-          >
-            {Object.entries(FORMATO_LABELS).map(([key, label]) => (
-              <Select.Item key={key} id={key} label={label} />
-            ))}
-          </Select>
-        </div>
+           <Select
+             label="Estilo"
+             aria-label="Estilo da entrega"
+             selectedKey={video.estilo || undefined}
+             onSelectionChange={handleSelectChange("estilo")}
+             placeholder="Selecione"
+           >
+             {Object.entries(ESTILO_LABELS).map(([key, label]) => (
+               <Select.Item key={key} id={key} label={label} />
+             ))}
+           </Select>
+         </div>
       </div>
     </div>
   );

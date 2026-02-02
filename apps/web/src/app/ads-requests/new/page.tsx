@@ -22,6 +22,7 @@ export default function NewAdProjectPage() {
   const [briefing, setBriefing] = useState("");
   const [deadline, setDeadline] = useState("");
   const [priority, setPriority] = useState("");
+  const [incluiPackFotos, setIncluiPackFotos] = useState(false);
   const [videos, setVideos] = useState<VideoFormData[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +37,7 @@ export default function NewAdProjectPage() {
   const defaultAdTypeId = adTypes?.[0]?.id || "";
 
   const addVideo = () => {
-    setVideos([...videos, { nomeDescritivo: "", tema: "", estilo: "", formato: "" }]);
+    setVideos([...videos, { nomeDescritivo: "", tema: "", estilo: "" }]);
   };
 
   const updateVideo = (index: number, video: VideoFormData) => {
@@ -58,11 +59,10 @@ export default function NewAdProjectPage() {
     if (!briefing || briefing.length < 10) newErrors.briefing = "Briefing deve ter pelo menos 10 caracteres";
 
     videos.forEach((video, i) => {
-      if (!video.nomeDescritivo) newErrors[`video_${i}_nome`] = "Nome obrigatorio";
-      if (!video.tema) newErrors[`video_${i}_tema`] = "Tema obrigatorio";
-      if (!video.estilo) newErrors[`video_${i}_estilo`] = "Estilo obrigatorio";
-      if (!video.formato) newErrors[`video_${i}_formato`] = "Formato obrigatorio";
-    });
+       if (!video.nomeDescritivo) newErrors[`video_${i}_nome`] = "Nome obrigatorio";
+       if (!video.tema) newErrors[`video_${i}_tema`] = "Tema obrigatorio";
+       if (!video.estilo) newErrors[`video_${i}_estilo`] = "Estilo obrigatorio";
+     });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -86,15 +86,15 @@ export default function NewAdProjectPage() {
         priority: priority ? (priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT") : undefined,
       });
 
-      for (const video of videos) {
-        await createVideo.mutateAsync({
-          projectId: project.id,
-          nomeDescritivo: video.nomeDescritivo,
-          tema: video.tema as "GERAL" | "SONO" | "ANSIEDADE" | "DEPRESSAO" | "PESO" | "DISF" | "DORES" | "FOCO" | "PERFORM" | "PATOLOGIAS" | "TABACO",
-          estilo: video.estilo as "UGC" | "EDUC" | "COMED" | "DEPOI" | "POV" | "STORY" | "MITOS" | "QA" | "ANTES" | "REVIEW" | "REACT" | "TREND" | "INST",
-          formato: video.formato as "VID" | "MOT" | "IMG" | "CRSEL",
-        });
-      }
+       for (const video of videos) {
+         await createVideo.mutateAsync({
+           projectId: project.id,
+           nomeDescritivo: video.nomeDescritivo,
+           tema: video.tema as "GERAL" | "SONO" | "ANSIEDADE" | "DEPRESSAO" | "PESO" | "DISF" | "DORES" | "FOCO" | "PERFORM" | "PATOLOGIAS" | "TABACO",
+           estilo: video.estilo as "UGC" | "EDUC" | "COMED" | "DEPOI" | "POV" | "STORY" | "MITOS" | "QA" | "ANTES" | "REVIEW" | "REACT" | "TREND" | "INST",
+           formato: "VID" as const,
+         });
+       }
 
       if (shouldSubmit) {
         await submitProject.mutateAsync({ id: project.id });
@@ -138,36 +138,20 @@ export default function NewAdProjectPage() {
         />
         {errors.title && <p className="text-xs text-error-primary -mt-2">{errors.title}</p>}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Select
-              label="Tipo de Ad"
-              aria-label="Tipo de Ad"
-              selectedKey={defaultAdTypeId || undefined}
-              isDisabled
-              placeholder="Video Criativo"
-            >
-              {(adTypes || []).map((type) => (
-                <Select.Item key={type.id} id={type.id} label={type.name} />
-              ))}
-            </Select>
-          </div>
-
-          <div>
-            <Select
-              label="Origin"
-              aria-label="Origin"
-              selectedKey={originId || undefined}
-              onSelectionChange={(key) => key && setOriginId(String(key))}
-              placeholder="Selecione a origin"
-            >
-              {(originsData?.items ?? []).map((origin) => (
-                <Select.Item key={origin.id} id={origin.id} label={origin.name} />
-              ))}
-            </Select>
-            {errors.originId && <p className="text-xs text-error-primary mt-1">{errors.originId}</p>}
-          </div>
-        </div>
+         <div>
+           <Select
+             label="Origin"
+             aria-label="Origin"
+             selectedKey={originId || undefined}
+             onSelectionChange={(key) => key && setOriginId(String(key))}
+             placeholder="Selecione a origin"
+           >
+             {(originsData?.items ?? []).map((origin) => (
+               <Select.Item key={origin.id} id={origin.id} label={origin.name} />
+             ))}
+           </Select>
+           {errors.originId && <p className="text-xs text-error-primary mt-1">{errors.originId}</p>}
+         </div>
 
         <TextArea
           label="Briefing"
