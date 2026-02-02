@@ -49,6 +49,7 @@ model File {
   requests       RequestFile[]
   adCreatives    AdCreativeMedia[]
   adDeliverables AdDeliverable[] @relation("AdDeliverableFile")
+  projectImages  AdProjectImage[] @relation("AdProjectImageFile")
 
   @@index([uploadedById])
   @@index([creatorId])

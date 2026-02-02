@@ -31,6 +31,7 @@ model User {
          fieldValueVersions FieldValueVersion[]
          adCreativeLinks    AdCreativeMedia[] @relation("AdCreativeLinker")
          adProjects         AdProject[] @relation("AdProjectCreator")
+         uploadedProjectImages AdProjectImage[] @relation("AdProjectImageUploader")
 
     @@map("user")
 }

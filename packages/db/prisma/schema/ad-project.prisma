@@ -109,24 +109,26 @@ model AdType {
 }
 
 model AdProject {
-  id           String          @id @default(cuid())
-  title        String
-  adTypeId     String
-  originId     String
-  briefing     String          @db.Text
-  deadline     DateTime?
-  priority     Priority?
-  currentPhase Int             @default(1)
-  status       AdProjectStatus @default(DRAFT)
-  createdById  String
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id               String          @id @default(cuid())
+  title            String
+  adTypeId         String
+  originId         String
+  briefing         String          @db.Text
+  deadline         DateTime?
+  priority         Priority?
+  currentPhase     Int             @default(1)
+  status           AdProjectStatus @default(DRAFT)
+  incluiPackFotos  Boolean         @default(false)
+  createdById      String
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   // Relations
   adType    AdType  @relation(fields: [adTypeId], references: [id])
   origin    Origin  @relation(fields: [originId], references: [id])
   createdBy User    @relation("AdProjectCreator", fields: [createdById], references: [id])
   videos    AdVideo[]
+  images    AdProjectImage[]
 
   // Indexes
   @@index([adTypeId])
@@ -220,6 +222,24 @@ model AdDeliverable {
   @@index([fileId])
   @@index([adNumber])
   @@map("ad_deliverable")
+}
+
+model AdProjectImage {
+  id          String   @id @default(cuid())
+  projectId   String
+  fileId      String
+  uploadedById String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  project     AdProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  file        File      @relation("AdProjectImageFile", fields: [fileId], references: [id])
+  uploadedBy  User      @relation("AdProjectImageUploader", fields: [uploadedById], references: [id])
+
+  // Indexes
+  @@index([projectId])
+  @@index([fileId])
+  @@map("ad_project_image")
 }
 
 model AdCounter {
