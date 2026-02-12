@@ -19,6 +19,9 @@ export default async function AdminLayout({
   }
 
   if (!session.user.role || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
+    if (session.user.role === "CREATOR_ONLY") {
+      redirect("/criadores");
+    }
     redirect("/dashboard");
   }
 

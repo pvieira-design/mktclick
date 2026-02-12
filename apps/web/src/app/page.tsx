@@ -8,6 +8,9 @@ export default async function Home() {
   });
 
   if (session?.user) {
+    if (session.user.role === "CREATOR_ONLY") {
+      redirect("/criadores");
+    }
     redirect("/dashboard");
   }
 

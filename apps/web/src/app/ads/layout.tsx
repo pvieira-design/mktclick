@@ -18,6 +18,10 @@ export default async function AdsLayout({
     redirect("/login");
   }
 
+  if (session.user.role === "CREATOR_ONLY") {
+    redirect("/criadores");
+  }
+
   return (
     <div className="flex h-screen">
       <Sidebar userRole={session.user.role ?? undefined}>

@@ -2,6 +2,7 @@ enum UserRole {
   USER
   ADMIN
   SUPER_ADMIN
+  CREATOR_ONLY
 }
 
 model User {

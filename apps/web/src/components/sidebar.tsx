@@ -30,6 +30,7 @@ interface SidebarProps {
 export function Sidebar({ children, userRole }: SidebarProps) {
   const pathname = usePathname();
   const isAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN";
+  const isCreatorOnly = userRole === "CREATOR_ONLY";
 
   const getActiveUrl = () => {
     if (pathname.startsWith("/ads-requests")) return "/ads-requests";
@@ -47,18 +48,27 @@ export function Sidebar({ children, userRole }: SidebarProps) {
 
   const activeUrl = getActiveUrl();
 
-  const sections: NavSection[] = [
-    {
-      label: "General",
-      items: [
-         { label: "Requests", href: "/dashboard", icon: ClipboardCheck },
-         { label: "Ads Request", href: "/ads-requests", icon: Film01 },
-         { label: "Criadores", href: "/criadores", icon: Users01 },
-        { label: "Biblioteca", href: "/library", icon: FolderClosed },
-        { label: "Anúncios", href: "/ads", icon: BarChartSquare02 },
-      ],
-    },
-  ];
+  const sections: NavSection[] = isCreatorOnly
+    ? [
+        {
+          label: "General",
+          items: [
+            { label: "Criadores", href: "/criadores", icon: Users01 },
+          ],
+        },
+      ]
+    : [
+        {
+          label: "General",
+          items: [
+            { label: "Requests", href: "/dashboard", icon: ClipboardCheck },
+            { label: "Ads Request", href: "/ads-requests", icon: Film01 },
+            { label: "Criadores", href: "/criadores", icon: Users01 },
+            { label: "Biblioteca", href: "/library", icon: FolderClosed },
+            { label: "Anúncios", href: "/ads", icon: BarChartSquare02 },
+          ],
+        },
+      ];
 
   if (isAdmin) {
     sections.push({
@@ -77,7 +87,7 @@ export function Sidebar({ children, userRole }: SidebarProps) {
   return (
     <aside className="flex h-full w-60 flex-col border-r border-secondary bg-primary">
       <div className="flex h-16 items-center border-b border-secondary px-4 lg:px-6">
-        <Link href="/dashboard">
+        <Link href={isCreatorOnly ? "/criadores" : "/dashboard"}>
           <ClickLogo />
         </Link>
       </div>
