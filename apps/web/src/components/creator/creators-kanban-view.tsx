@@ -51,6 +51,7 @@ const KANBAN_COLUMNS = [
 
 interface CreatorsKanbanViewProps {
   onEditCreator: (id: string) => void;
+  isAdmin?: boolean;
 }
 
 function normalizePhone(phone: string): string {
@@ -59,7 +60,7 @@ function normalizePhone(phone: string): string {
   return clean;
 }
 
-export function CreatorsKanbanView({ onEditCreator }: CreatorsKanbanViewProps) {
+export function CreatorsKanbanView({ onEditCreator, isAdmin }: CreatorsKanbanViewProps) {
   // Fetch all active creators (high limit to get all)
   const { data: creatorsData, isLoading: loadingCreators } = useQuery(
     trpc.creator.list.queryOptions({ limit: 200, isActive: true })
@@ -103,12 +104,17 @@ export function CreatorsKanbanView({ onEditCreator }: CreatorsKanbanViewProps) {
     return grouped;
   }, [creators, stageMap]);
 
+  const visibleColumns = useMemo(
+    () => isAdmin ? KANBAN_COLUMNS : KANBAN_COLUMNS.filter((col) => col.id !== "produto_entregue"),
+    [isAdmin]
+  );
+
   const isLoading = loadingCreators || (phonesToQuery.length > 0 && loadingStages);
 
   if (isLoading) {
     return (
       <div className="flex gap-4 overflow-x-auto pb-4">
-        {KANBAN_COLUMNS.map((col) => (
+        {visibleColumns.map((col) => (
           <div key={col.id} className="flex-shrink-0 w-64">
             <Skeleton className="h-8 w-full mb-3 rounded-lg" />
             <div className="space-y-2">
@@ -123,7 +129,7 @@ export function CreatorsKanbanView({ onEditCreator }: CreatorsKanbanViewProps) {
 
   return (
     <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2">
-      {KANBAN_COLUMNS.map((col) => {
+      {visibleColumns.map((col) => {
         const items = columns[col.id] ?? [];
         return (
           <div

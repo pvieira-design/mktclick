@@ -167,7 +167,7 @@ export default function CriadoresPage() {
       </div>
 
       {viewMode === "kanban" ? (
-        <CreatorsKanbanView onEditCreator={setEditCreatorId} />
+        <CreatorsKanbanView onEditCreator={setEditCreatorId} isAdmin={isAdmin} />
       ) : (
         <>
           <div className="flex gap-4">
