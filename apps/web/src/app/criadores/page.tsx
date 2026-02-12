@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/base/buttons/button";
@@ -94,6 +94,28 @@ export default function CriadoresPage() {
       limit,
     })
   );
+
+  // Fetch lead stages to filter "produto_entregue" for non-admins in list view
+  const listPhones = useMemo(
+    () => (data?.items ?? []).filter((c) => c.phone).map((c) => c.phone!),
+    [data?.items]
+  );
+
+  const { data: listStageMap } = useQuery({
+    ...trpc.creator.getBatchLeadStages.queryOptions({ phones: listPhones }),
+    enabled: !isAdmin && listPhones.length > 0 && viewMode === "list",
+  });
+
+  const filteredItems = useMemo(() => {
+    const items = data?.items ?? [];
+    if (isAdmin || !listStageMap) return items;
+    return items.filter((creator) => {
+      if (!creator.phone) return true;
+      let phone = creator.phone.replace(/\D/g, "");
+      if (!phone.startsWith("55")) phone = "55" + phone;
+      return listStageMap[phone] !== "produto_entregue";
+    });
+  }, [data?.items, isAdmin, listStageMap]);
 
   const toggleActiveMutation = useMutation({
     ...(trpc.creator.toggleActive.mutationOptions as any)(),
@@ -211,7 +233,7 @@ export default function CriadoresPage() {
                   <Skeleton key={i} className="h-12 w-full" />
                 ))}
               </div>
-            ) : (data?.items ?? []).length === 0 ? (
+            ) : filteredItems.length === 0 ? (
               <div className="p-8 text-center text-tertiary">
                 Nenhum criador encontrado.
               </div>
@@ -227,7 +249,7 @@ export default function CriadoresPage() {
                     />
                   )}
                 </Table.Header>
-                <Table.Body items={data?.items ?? []}>
+                <Table.Body items={filteredItems}>
                   {(creator: Creator) => {
                     const contractStatus = getContractStatus(creator.contractStartDate, creator.contractEndDate);
                     return (
