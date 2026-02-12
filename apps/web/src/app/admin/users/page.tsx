@@ -17,7 +17,7 @@ interface User {
   id: string;
   name: string | null;
   email: string;
-  role: "USER" | "ADMIN" | "SUPER_ADMIN";
+  role: "USER" | "ADMIN" | "SUPER_ADMIN" | "CREATOR_ONLY";
   image: string | null;
   banned: boolean | null;
   mustChangePassword: boolean;
@@ -31,6 +31,7 @@ const roleLabels: Record<string, string> = {
   USER: "Usuário",
   ADMIN: "Admin",
   SUPER_ADMIN: "Super Admin",
+  CREATOR_ONLY: "Criador",
 };
 
 export default function UsersListPage() {
@@ -44,7 +45,7 @@ export default function UsersListPage() {
   const { data, isLoading } = useQuery(
     trpc.user.list.queryOptions({
       search: search || undefined,
-      role: roleFilter !== "all" ? roleFilter as "USER" | "ADMIN" | "SUPER_ADMIN" : undefined,
+      role: roleFilter !== "all" ? roleFilter as "USER" | "ADMIN" | "SUPER_ADMIN" | "CREATOR_ONLY" : undefined,
       page,
       limit,
     })

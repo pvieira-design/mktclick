@@ -35,7 +35,7 @@ export function NewUserDrawer({ open, onOpenChange }: NewUserDrawerProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"USER" | "ADMIN" | "SUPER_ADMIN">("USER");
+  const [role, setRole] = useState<"USER" | "ADMIN" | "SUPER_ADMIN" | "CREATOR_ONLY">("USER");
   const [areaAssignments, setAreaAssignments] = useState<AreaAssignment[]>([]);
   const [selectedAreaId, setSelectedAreaId] = useState<string>("");
   const [selectedPosition, setSelectedPosition] = useState<"HEAD" | "COORDINATOR" | "STAFF">("STAFF");

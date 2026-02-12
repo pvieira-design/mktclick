@@ -31,7 +31,7 @@ export function EditUserDrawer({ open, onOpenChange, userId }: EditUserDrawerPro
   const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"USER" | "ADMIN" | "SUPER_ADMIN">("USER");
+  const [role, setRole] = useState<"USER" | "ADMIN" | "SUPER_ADMIN" | "CREATOR_ONLY">("USER");
   const [banned, setBanned] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [newPassword, setNewPassword] = useState("");
