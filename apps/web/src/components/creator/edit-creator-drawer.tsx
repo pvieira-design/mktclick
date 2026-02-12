@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Save01, Trash01, X } from "@untitledui/icons";
 import { CalendarDate, getLocalTimeZone } from "@internationalized/date";
 import type { DateValue } from "react-aria-components";
+import { CreatorLeadData } from "./creator-lead-data";
 
 interface EditCreatorDrawerProps {
   creatorId: string | null;
@@ -163,7 +164,7 @@ export function EditCreatorDrawer({ creatorId, open, onOpenChange }: EditCreator
   const isValid = name.trim() && responsibleId;
 
   return (
-    <SlideoutMenu isOpen={open} onOpenChange={onOpenChange} dialogAriaLabel="Editar Criador">
+    <SlideoutMenu isOpen={open} onOpenChange={onOpenChange} dialogAriaLabel="Editar Criador" modalClassName="max-w-5xl">
       {({ close }) => (
         <>
           <div className="relative z-1 flex items-start justify-between w-full px-4 pt-6 md:px-6">
@@ -193,190 +194,200 @@ export function EditCreatorDrawer({ creatorId, open, onOpenChange }: EditCreator
           </div>
 
           <SlideoutMenu.Content>
-            {loadingCreator ? (
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-40 w-full" />
-                  <div className="grid grid-cols-2 gap-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Coluna Esquerda - Form */}
+              <div>
+                {loadingCreator ? (
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <Skeleton className="h-5 w-40" />
+                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-40 w-full" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <Skeleton className="h-5 w-24" />
+                      <div className="grid grid-cols-2 gap-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      <Skeleton className="h-10 w-full" />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-4">
-                  <Skeleton className="h-5 w-24" />
-                  <div className="grid grid-cols-2 gap-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              </div>
-            ) : (
-              <form id="edit-creator-form" onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-primary border-b border-secondary pb-2">
-                    Informações Básicas
-                  </h3>
-                  
-                  <Input
-                    label="Nome *"
-                    value={name}
-                    onChange={setName}
-                    placeholder="Nome completo"
-                    isRequired
-                  />
+                ) : (
+                  <form id="edit-creator-form" onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-primary border-b border-secondary pb-2">
+                        Informações Básicas
+                      </h3>
 
-                  <div>
-                    <label className="text-sm font-medium text-secondary mb-1.5 block">
-                      Foto
-                    </label>
-                    {uploadedImage ? (
-                      <div className="relative group rounded-xl overflow-hidden ring-1 ring-secondary">
-                        <img
-                          src={uploadedImage.url}
-                          alt="Foto do criador"
-                          className="w-full h-40 object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                          <button
-                            type="button"
-                            onClick={handleRemoveImage}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-full bg-white/90 text-error-primary hover:bg-white"
-                            aria-label="Remover foto"
-                          >
-                            <Trash01 className="size-5" />
-                          </button>
-                        </div>
-                        {uploadedImage.fileName && (
-                          <div className="px-3 py-2 bg-primary text-xs text-tertiary truncate">
-                            {uploadedImage.fileName}
+                      <Input
+                        label="Nome *"
+                        value={name}
+                        onChange={setName}
+                        placeholder="Nome completo"
+                        isRequired
+                      />
+
+                      <div>
+                        <label className="text-sm font-medium text-secondary mb-1.5 block">
+                          Foto
+                        </label>
+                        {uploadedImage ? (
+                          <div className="relative group rounded-xl overflow-hidden ring-1 ring-secondary">
+                            <img
+                              src={uploadedImage.url}
+                              alt="Foto do criador"
+                              className="w-full h-40 object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                              <button
+                                type="button"
+                                onClick={handleRemoveImage}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-full bg-white/90 text-error-primary hover:bg-white"
+                                aria-label="Remover foto"
+                              >
+                                <Trash01 className="size-5" />
+                              </button>
+                            </div>
+                            {uploadedImage.fileName && (
+                              <div className="px-3 py-2 bg-primary text-xs text-tertiary truncate">
+                                {uploadedImage.fileName}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <FileUpload.DropZone
+                            accept="image/*"
+                            allowsMultiple={false}
+                            maxSize={10 * 1024 * 1024}
+                            hint="PNG, JPG ou WebP (máx. 10MB)"
+                            isDisabled={isUploading}
+                            onDropFiles={handleImageDrop}
+                            onDropUnacceptedFiles={() => toast.error("Formato de arquivo não suportado. Use PNG, JPG ou WebP.")}
+                            onSizeLimitExceed={() => toast.error("Arquivo muito grande. Máximo: 10MB.")}
+                          />
+                        )}
+                        {isUploading && uploadProgress > 0 && uploadProgress < 100 && (
+                          <div className="mt-2 h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-brand-solid transition-all duration-200"
+                              style={{ width: `${uploadProgress}%` }}
+                            />
                           </div>
                         )}
                       </div>
-                    ) : (
-                      <FileUpload.DropZone
-                        accept="image/*"
-                        allowsMultiple={false}
-                        maxSize={10 * 1024 * 1024}
-                        hint="PNG, JPG ou WebP (máx. 10MB)"
-                        isDisabled={isUploading}
-                        onDropFiles={handleImageDrop}
-                        onDropUnacceptedFiles={() => toast.error("Formato de arquivo não suportado. Use PNG, JPG ou WebP.")}
-                        onSizeLimitExceed={() => toast.error("Arquivo muito grande. Máximo: 10MB.")}
-                      />
-                    )}
-                    {isUploading && uploadProgress > 0 && uploadProgress < 100 && (
-                      <div className="mt-2 h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-brand-solid transition-all duration-200"
-                          style={{ width: `${uploadProgress}%` }}
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <Select
+                          label="Tipo *"
+                          selectedKey={type}
+                          onSelectionChange={(key) => setType(key as CreatorType)}
+                        >
+                          {Object.entries(creatorTypeLabels).map(([value, label]) => (
+                            <Select.Item key={value} id={value} label={label} />
+                          ))}
+                        </Select>
+
+                        <Select
+                          label="Responsável *"
+                          selectedKey={responsibleId}
+                          onSelectionChange={(key) => setResponsibleId(key as string)}
+                          isDisabled={loadingUsers}
+                          placeholder={loadingUsers ? "Carregando..." : "Selecione..."}
+                        >
+                          {usersData?.items.map((user) => (
+                            <Select.Item key={user.id} id={user.id} label={user.name || user.email} />
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-primary border-b border-secondary pb-2">
+                        Contato
+                      </h3>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          label="Email"
+                          type="email"
+                          value={email}
+                          onChange={setEmail}
+                          placeholder="email@exemplo.com"
+                        />
+
+                        <Input
+                          label="Telefone/WhatsApp"
+                          value={phone}
+                          onChange={setPhone}
+                          placeholder="(11) 99999-9999"
                         />
                       </div>
-                    )}
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <Select
-                      label="Tipo *"
-                      selectedKey={type}
-                      onSelectionChange={(key) => setType(key as CreatorType)}
-                    >
-                      {Object.entries(creatorTypeLabels).map(([value, label]) => (
-                        <Select.Item key={value} id={value} label={label} />
-                      ))}
-                    </Select>
-
-                    <Select
-                      label="Responsável *"
-                      selectedKey={responsibleId}
-                      onSelectionChange={(key) => setResponsibleId(key as string)}
-                      isDisabled={loadingUsers}
-                      placeholder={loadingUsers ? "Carregando..." : "Selecione..."}
-                    >
-                      {usersData?.items.map((user) => (
-                        <Select.Item key={user.id} id={user.id} label={user.name || user.email} />
-                      ))}
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-primary border-b border-secondary pb-2">
-                    Contato
-                  </h3>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label="Email"
-                      type="email"
-                      value={email}
-                      onChange={setEmail}
-                      placeholder="email@exemplo.com"
-                    />
-
-                    <Input
-                      label="Telefone/WhatsApp"
-                      value={phone}
-                      onChange={setPhone}
-                      placeholder="(11) 99999-9999"
-                    />
-                  </div>
-
-                  <Input
-                    label="Instagram"
-                    value={instagram}
-                    onChange={setInstagram}
-                    placeholder="@usuario"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-primary border-b border-secondary pb-2">
-                    Contrato
-                  </h3>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-secondary mb-1.5 block">
-                        Data Início
-                      </label>
-                      <DatePicker
-                        aria-label="Data Início"
-                        value={contractStartDate}
-                        onChange={setContractStartDate}
+                      <Input
+                        label="Instagram"
+                        value={instagram}
+                        onChange={setInstagram}
+                        placeholder="@usuario"
                       />
                     </div>
 
-                    <div>
-                      <label className="text-sm font-medium text-secondary mb-1.5 block">
-                        Data Fim
-                      </label>
-                      <DatePicker
-                        aria-label="Data Fim"
-                        value={contractEndDate}
-                        onChange={setContractEndDate}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-primary border-b border-secondary pb-2">
+                        Contrato
+                      </h3>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-secondary mb-1.5 block">
+                            Data Início
+                          </label>
+                          <DatePicker
+                            aria-label="Data Início"
+                            value={contractStartDate}
+                            onChange={setContractStartDate}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-secondary mb-1.5 block">
+                            Data Fim
+                          </label>
+                          <DatePicker
+                            aria-label="Data Fim"
+                            value={contractEndDate}
+                            onChange={setContractEndDate}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-primary border-b border-secondary pb-2">
+                        Observações
+                      </h3>
+
+                      <TextArea
+                        aria-label="Observações"
+                        value={notes}
+                        onChange={setNotes}
+                        placeholder="Observações, preferências, histórico..."
+                        rows={4}
                       />
                     </div>
-                  </div>
-                </div>
+                  </form>
+                )}
+              </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-primary border-b border-secondary pb-2">
-                    Observações
-                  </h3>
-
-                  <TextArea
-                    aria-label="Observações"
-                    value={notes}
-                    onChange={setNotes}
-                    placeholder="Observações, preferências, histórico..."
-                    rows={4}
-                  />
-                </div>
-              </form>
-            )}
+              {/* Coluna Direita - Dados do Lead */}
+              <div className="lg:border-l lg:border-secondary lg:pl-6">
+                <CreatorLeadData phone={creator?.phone || phone || null} />
+              </div>
+            </div>
           </SlideoutMenu.Content>
 
           <SlideoutMenu.Footer className="flex items-center justify-end gap-3">

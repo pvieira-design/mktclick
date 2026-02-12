@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import db, { CreatorType } from "@marketingclickcannabis/db";
+import db, { CreatorType, queryClickDb } from "@marketingclickcannabis/db";
 
 import { adminProcedure, protectedProcedure, router } from "../index";
 
@@ -14,7 +14,7 @@ export const creatorRouter = router({
         responsibleId: z.string().optional(),
         isActive: z.boolean().optional(),
         page: z.number().int().positive().default(1),
-        limit: z.number().int().positive().max(100).default(20),
+        limit: z.number().int().positive().max(200).default(20),
       })
     )
     .query(async ({ input }) => {
@@ -296,5 +296,220 @@ export const creatorRouter = router({
       });
 
       return updated;
+    }),
+
+  getBatchLeadStages: protectedProcedure
+    .input(z.object({ phones: z.array(z.string()).min(1).max(200) }))
+    .query(async ({ input }) => {
+      const normalized = input.phones.map((p) => {
+        let clean = p.replace(/\D/g, "");
+        if (!clean.startsWith("55")) clean = "55" + clean;
+        return clean;
+      });
+
+      const query = `
+        SELECT
+          u.phone AS telefone,
+          COALESCE((
+            SELECT TRUE FROM deliveries d
+            WHERE d.user_id = u.id AND d.status = 'Delivered' LIMIT 1
+          ), FALSE) AS produto_entregue,
+          COALESCE((
+            SELECT TRUE FROM deliveries d
+            WHERE d.user_id = u.id AND d.status != 'Draft'
+              AND d.tracking_code IS NOT NULL AND d.tracking_code != '0000' LIMIT 1
+          ), FALSE) AS ja_enviou_rastreio,
+          COALESCE((
+            SELECT TRUE FROM files f
+            WHERE f.user_id = u.id
+              AND f.type IN ('identidade', 'comprovante de residência',
+                             'comprante de residência', 'comprovante situacao cadastral') LIMIT 1
+          ), FALSE) AS ja_enviou_documentos,
+          COALESCE((
+            SELECT TRUE FROM files f
+            WHERE f.user_id = u.id AND f.type = 'anvisa' LIMIT 1
+          ), FALSE) AS ja_enviou_anvisa,
+          COALESCE((
+            SELECT TRUE FROM product_budgets pb
+            WHERE pb.user_id = u.id AND pb.status = 'confirmed' LIMIT 1
+          ), FALSE) AS ja_comprou_orcamento,
+          COALESCE((
+            SELECT TRUE FROM consultings c
+            WHERE c.user_id = u.id AND c.completed = TRUE
+              AND c.status NOT IN ('preconsulting') LIMIT 1
+          ), FALSE) AS ja_fez_consulta,
+          TRUE AS usuario_cadastrado
+        FROM users u
+        WHERE u.phone = ANY($1::text[])
+      `;
+
+      try {
+        const rows = await queryClickDb(query, [normalized]);
+        const stageMap: Record<string, string> = {};
+
+        for (const row of rows) {
+          const phone = row.telefone as string;
+          let stage = "entrada";
+          if (row.ja_fez_consulta) stage = "primeira_consulta";
+          if (row.ja_comprou_orcamento) stage = "pagamento_orcamento";
+          if (row.ja_enviou_anvisa) stage = "envio_anvisa";
+          if (row.ja_enviou_documentos) stage = "envio_documentos";
+          if (row.ja_enviou_rastreio) stage = "envio_rastreio";
+          if (row.produto_entregue) stage = "produto_entregue";
+          stageMap[phone] = stage;
+        }
+
+        return stageMap;
+      } catch {
+        return {} as Record<string, string>;
+      }
+    }),
+
+  getLeadData: protectedProcedure
+    .input(z.object({ phone: z.string().min(1) }))
+    .query(async ({ input }) => {
+      let phone = input.phone.replace(/\D/g, "");
+
+      if (!phone) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Telefone inválido",
+        });
+      }
+
+      // Garante prefixo 55 (Brasil)
+      if (!phone.startsWith("55")) {
+        phone = "55" + phone;
+      }
+
+      const query = `
+        SELECT
+          u.first_name AS nome,
+          u.id AS user_id,
+          n.id AS negotiation_id,
+          u.phone AS telefone,
+          u.email,
+          u.data->>'linkChat' AS link_guru,
+          CONCAT('https://clickagendamento.com/pipeline/deal/', n.id, '#overview') AS link_crm,
+          n.funnel_stage_id,
+          fs.name AS etapa_funil_atual,
+          n.pipeline_id,
+          pip.name AS nome_pipeline,
+          u.created_at AT TIME ZONE 'America/Sao_Paulo' AS data_entrada_usuario,
+          TRUE AS usuario_cadastrado,
+          (SELECT c.start::timestamptz AT TIME ZONE 'America/Sao_Paulo'
+            FROM consultings c
+            WHERE c.user_id = u.id AND c.completed = TRUE
+              AND c.status NOT IN ('preconsulting')
+            ORDER BY c.start::timestamptz ASC LIMIT 1
+          ) AS data_primeira_consulta,
+          COALESCE((
+            SELECT TRUE FROM consultings c
+            WHERE c.user_id = u.id AND c.completed = TRUE
+              AND c.status NOT IN ('preconsulting') LIMIT 1
+          ), FALSE) AS ja_fez_consulta,
+          (SELECT pb.payment_at AT TIME ZONE 'America/Sao_Paulo'
+            FROM product_budgets pb
+            WHERE pb.user_id = u.id AND pb.status = 'confirmed'
+            ORDER BY pb.payment_at ASC LIMIT 1
+          ) AS data_pagamento_orcamento,
+          COALESCE((
+            SELECT TRUE FROM product_budgets pb
+            WHERE pb.user_id = u.id AND pb.status = 'confirmed' LIMIT 1
+          ), FALSE) AS ja_comprou_orcamento,
+          (SELECT f.created_at AT TIME ZONE 'America/Sao_Paulo'
+            FROM files f
+            WHERE f.user_id = u.id AND f.type = 'anvisa'
+            ORDER BY f.created_at ASC LIMIT 1
+          ) AS data_envio_anvisa,
+          COALESCE((
+            SELECT TRUE FROM files f
+            WHERE f.user_id = u.id AND f.type = 'anvisa' LIMIT 1
+          ), FALSE) AS ja_enviou_anvisa,
+          (SELECT MAX(f.created_at) AT TIME ZONE 'America/Sao_Paulo'
+            FROM files f
+            WHERE f.user_id = u.id
+              AND f.type IN ('identidade', 'comprovante de residência',
+                             'comprante de residência', 'comprovante situacao cadastral')
+          ) AS data_envio_documentos,
+          COALESCE((
+            SELECT TRUE FROM files f
+            WHERE f.user_id = u.id
+              AND f.type IN ('identidade', 'comprovante de residência',
+                             'comprante de residência', 'comprovante situacao cadastral') LIMIT 1
+          ), FALSE) AS ja_enviou_documentos,
+          (SELECT d.created_at AT TIME ZONE 'America/Sao_Paulo'
+            FROM deliveries d
+            WHERE d.user_id = u.id AND d.status != 'Draft'
+              AND d.tracking_code IS NOT NULL AND d.tracking_code != '0000'
+            ORDER BY d.created_at ASC LIMIT 1
+          ) AS data_envio_rastreio,
+          COALESCE((
+            SELECT TRUE FROM deliveries d
+            WHERE d.user_id = u.id AND d.status != 'Draft'
+              AND d.tracking_code IS NOT NULL AND d.tracking_code != '0000' LIMIT 1
+          ), FALSE) AS ja_enviou_rastreio,
+          (SELECT d.event_date AT TIME ZONE 'America/Sao_Paulo'
+            FROM deliveries d
+            WHERE d.user_id = u.id AND d.status = 'Delivered'
+              AND d.event_date IS NOT NULL
+            ORDER BY d.event_date DESC LIMIT 1
+          ) AS data_chegada_produto,
+          COALESCE((
+            SELECT TRUE FROM deliveries d
+            WHERE d.user_id = u.id AND d.status = 'Delivered' LIMIT 1
+          ), FALSE) AS produto_entregue,
+          (SELECT STRING_AGG(DISTINCT p.title, ', ')
+            FROM consultings c
+            JOIN medical_prescriptions mp ON mp.consulting_id = c.id
+            JOIN product_medical_prescriptions pmp ON pmp.medical_prescription_id = mp.id
+            JOIN products p ON p.id = pmp.product_id
+            WHERE c.user_id = u.id AND c.completed = TRUE
+              AND c.prescription_status = 'required'
+              AND c.status NOT IN ('preconsulting')
+              AND c.id = (
+                SELECT c2.id FROM consultings c2
+                WHERE c2.user_id = u.id AND c2.completed = TRUE
+                  AND c2.status NOT IN ('preconsulting')
+                ORDER BY c2.start::timestamptz ASC LIMIT 1
+              )
+          ) AS produtos_prescritos_primeira_consulta,
+          (SELECT f.url FROM consultings c
+            JOIN medical_prescriptions mp ON mp.consulting_id = c.id
+            JOIN files f ON f.id = mp.file_id
+            WHERE c.user_id = u.id AND c.prescription_status = 'required'
+              AND c.status NOT IN ('preconsulting')
+            ORDER BY mp.created_at DESC LIMIT 1
+          ) AS link_receita,
+          (SELECT f.url FROM files f
+            WHERE f.user_id = u.id AND f.type = 'anvisa'
+            ORDER BY f.created_at DESC LIMIT 1
+          ) AS link_anvisa,
+          (SELECT f.url FROM files f
+            WHERE f.user_id = u.id AND f.type = 'identidade'
+            ORDER BY f.created_at DESC LIMIT 1
+          ) AS link_identidade,
+          (SELECT f.url FROM files f
+            WHERE f.user_id = u.id
+              AND f.type IN ('comprovante de residência', 'comprante de residência')
+            ORDER BY f.created_at DESC LIMIT 1
+          ) AS link_comp_residencia
+        FROM users u
+        LEFT JOIN negotiations n ON n.user_id = u.id
+        LEFT JOIN funnel_stages fs ON fs.id = n.funnel_stage_id
+        LEFT JOIN pipelines pip ON pip.id = n.pipeline_id
+        WHERE u.phone = $1
+        LIMIT 5
+      `;
+
+      try {
+        const rows = await queryClickDb(query, [phone]);
+        return rows;
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Erro ao buscar dados do lead no banco da Click",
+        });
+      }
     }),
 });

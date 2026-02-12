@@ -3,13 +3,14 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../prisma/generated/client";
 import { queryAdsDb } from "./external-db";
+import { queryClickDb } from "./click-db";
 
 const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 export const db = prisma;
 export default prisma;
-export { queryAdsDb };
+export { queryAdsDb, queryClickDb };
 
 // Re-export enums for use in other packages
 export {
