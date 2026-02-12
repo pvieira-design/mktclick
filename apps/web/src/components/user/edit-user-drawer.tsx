@@ -222,6 +222,7 @@ export function EditUserDrawer({ open, onOpenChange, userId }: EditUserDrawerPro
                     <Select.Item id="USER" label="Usuário" />
                     <Select.Item id="ADMIN" label="Admin" />
                     <Select.Item id="SUPER_ADMIN" label="Super Admin" />
+                    <Select.Item id="CREATOR_ONLY" label="Criador" />
                   </Select>
 
                   <div className="flex items-center justify-between p-3 rounded-lg border border-secondary">
